@@ -1,0 +1,234 @@
+        -:    0:Source:implementation.c
+        -:    0:Programs:6
+        -:    1:#include <stdio.h>
+        -:    2:#include <string.h>
+        -:    3:#include <stdbool.h>
+        -:    4:#include "utilities.h"  // DO NOT REMOVE this line
+        -:    5:#include "implementation_reference.h"   // DO NOT REMOVE this line
+        -:    6:
+        -:    7:/***********************************************************************************************************************
+        -:    8: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:    9: * @param width - width of the imported 24-bit bitmap image
+        -:   10: * @param height - height of the imported 24-bit bitmap image
+        -:   11: * @param offset - number of pixels to shift the object in bitmap image up
+        -:   12: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   13: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:   14: * Note2: You can assume the object will never be moved off the screen
+        -:   15: **********************************************************************************************************************/
+function processMoveUp called 54 returned 100% blocks executed 100%
+       54:   16:unsigned char *processMoveUp(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+       54:   17:    return processMoveUpReference(buffer_frame, width, height, offset);
+call    0 returned 100%
+        -:   18:}
+        -:   19:
+        -:   20:/***********************************************************************************************************************
+        -:   21: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   22: * @param width - width of the imported 24-bit bitmap image
+        -:   23: * @param height - height of the imported 24-bit bitmap image
+        -:   24: * @param offset - number of pixels to shift the object in bitmap image left
+        -:   25: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   26: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:   27: * Note2: You can assume the object will never be moved off the screen
+        -:   28: **********************************************************************************************************************/
+function processMoveRight called 84 returned 100% blocks executed 100%
+       84:   29:unsigned char *processMoveRight(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+       84:   30:    return processMoveRightReference(buffer_frame, width, height, offset);
+call    0 returned 100%
+        -:   31:}
+        -:   32:
+        -:   33:/***********************************************************************************************************************
+        -:   34: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   35: * @param width - width of the imported 24-bit bitmap image
+        -:   36: * @param height - height of the imported 24-bit bitmap image
+        -:   37: * @param offset - number of pixels to shift the object in bitmap image up
+        -:   38: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   39: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:   40: * Note2: You can assume the object will never be moved off the screen
+        -:   41: **********************************************************************************************************************/
+function processMoveDown called 108 returned 100% blocks executed 100%
+      108:   42:unsigned char *processMoveDown(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+      108:   43:    return processMoveDownReference(buffer_frame, width, height, offset);
+call    0 returned 100%
+        -:   44:}
+        -:   45:
+        -:   46:/***********************************************************************************************************************
+        -:   47: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   48: * @param width - width of the imported 24-bit bitmap image
+        -:   49: * @param height - height of the imported 24-bit bitmap image
+        -:   50: * @param offset - number of pixels to shift the object in bitmap image right
+        -:   51: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   52: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:   53: * Note2: You can assume the object will never be moved off the screen
+        -:   54: **********************************************************************************************************************/
+function processMoveLeft called 102 returned 100% blocks executed 100%
+      102:   55:unsigned char *processMoveLeft(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+      102:   56:    return processMoveLeftReference(buffer_frame, width, height, offset);
+call    0 returned 100%
+        -:   57:}
+        -:   58:
+        -:   59:/***********************************************************************************************************************
+        -:   60: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   61: * @param width - width of the imported 24-bit bitmap image
+        -:   62: * @param height - height of the imported 24-bit bitmap image
+        -:   63: * @param rotate_iteration - rotate object inside frame buffer clockwise by 90 degrees, <iteration> times
+        -:   64: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   65: * Note: You can assume the frame will always be square and you will be rotating the entire image
+        -:   66: **********************************************************************************************************************/
+function processRotateCW called 66 returned 100% blocks executed 100%
+       66:   67:unsigned char *processRotateCW(unsigned char *buffer_frame, unsigned width, unsigned height,
+        -:   68:                               int rotate_iteration) {
+       66:   69:    return processRotateCWReference(buffer_frame, width, height, rotate_iteration);
+call    0 returned 100%
+        -:   70:}
+        -:   71:
+        -:   72:/***********************************************************************************************************************
+        -:   73: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   74: * @param width - width of the imported 24-bit bitmap image
+        -:   75: * @param height - height of the imported 24-bit bitmap image
+        -:   76: * @param rotate_iteration - rotate object inside frame buffer counter clockwise by 90 degrees, <iteration> times
+        -:   77: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   78: * Note: You can assume the frame will always be square and you will be rotating the entire image
+        -:   79: **********************************************************************************************************************/
+function processRotateCCW called 78 returned 100% blocks executed 100%
+       78:   80:unsigned char *processRotateCCW(unsigned char *buffer_frame, unsigned width, unsigned height,
+        -:   81:                                int rotate_iteration) {
+       78:   82:    return processRotateCCWReference(buffer_frame, width, height, rotate_iteration);
+call    0 returned 100%
+        -:   83:}
+        -:   84:
+        -:   85:/***********************************************************************************************************************
+        -:   86: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   87: * @param width - width of the imported 24-bit bitmap image
+        -:   88: * @param height - height of the imported 24-bit bitmap image
+        -:   89: * @param _unused - this field is unused
+        -:   90: * @return
+        -:   91: **********************************************************************************************************************/
+function processMirrorX called 66 returned 100% blocks executed 100%
+       66:   92:unsigned char *processMirrorX(unsigned char *buffer_frame, unsigned int width, unsigned int height, int _unused) {
+       66:   93:    return processMirrorXReference(buffer_frame, width, height, _unused);
+call    0 returned 100%
+        -:   94:}
+        -:   95:
+        -:   96:/***********************************************************************************************************************
+        -:   97: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   98: * @param width - width of the imported 24-bit bitmap image
+        -:   99: * @param height - height of the imported 24-bit bitmap image
+        -:  100: * @param _unused - this field is unused
+        -:  101: * @return
+        -:  102: **********************************************************************************************************************/
+function processMirrorY called 42 returned 100% blocks executed 100%
+       42:  103:unsigned char *processMirrorY(unsigned char *buffer_frame, unsigned width, unsigned height, int _unused) {
+       42:  104:    return processMirrorYReference(buffer_frame, width, height, _unused);
+call    0 returned 100%
+        -:  105:}
+        -:  106:
+        -:  107:/***********************************************************************************************************************
+        -:  108: * WARNING: Do not modify the implementation_driver and team info prototype (name, parameter, return value) !!!
+        -:  109: *          Do not forget to modify the team_name and team member information !!!
+        -:  110: **********************************************************************************************************************/
+function print_team_info called 1 returned 100% blocks executed 100%
+        1:  111:void print_team_info(){
+        -:  112:    // Please modify this field with something interesting
+        1:  113:    char team_name[] = "default-name";
+        -:  114:
+        -:  115:    // Please fill in your information
+        1:  116:    char student_first_name[] = "john";
+        1:  117:    char student_last_name[] = "doe";
+        1:  118:    char student_student_number[] = "0000000000";
+        -:  119:
+        -:  120:    // Printing out team information
+        1:  121:    printf("*******************************************************************************************************\n");
+call    0 returned 100%
+        1:  122:    printf("Team Information:\n");
+call    0 returned 100%
+        1:  123:    printf("\tteam_name: %s\n", team_name);
+call    0 returned 100%
+        1:  124:    printf("\tstudent_first_name: %s\n", student_first_name);
+call    0 returned 100%
+        1:  125:    printf("\tstudent_last_name: %s\n", student_last_name);
+call    0 returned 100%
+        1:  126:    printf("\tstudent_student_number: %s\n", student_student_number);
+call    0 returned 100%
+        1:  127:}
+        -:  128:
+        -:  129:/***********************************************************************************************************************
+        -:  130: * WARNING: Do not modify the implementation_driver and team info prototype (name, parameter, return value) !!!
+        -:  131: *          You can modify anything else in this file
+        -:  132: ***********************************************************************************************************************
+        -:  133: * @param sensor_values - structure stores parsed key value pairs of program instructions
+        -:  134: * @param sensor_values_count - number of valid sensor values parsed from sensor log file or commandline console
+        -:  135: * @param frame_buffer - pointer pointing to a buffer storing the imported  24-bit bitmap image
+        -:  136: * @param width - width of the imported 24-bit bitmap image
+        -:  137: * @param height - height of the imported 24-bit bitmap image
+        -:  138: * @param grading_mode - turns off verification and turn on instrumentation
+        -:  139: ***********************************************************************************************************************
+        -:  140: *
+        -:  141: **********************************************************************************************************************/
+function implementation_driver called 6 returned 100% blocks executed 100%
+        6:  142:void implementation_driver(struct kv *sensor_values, int sensor_values_count, unsigned char *frame_buffer,
+        -:  143:                           unsigned int width, unsigned int height, bool grading_mode) {
+        6:  144:    int processed_frames = 0;
+      606:  145:    for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+        -:  146://        printf("Processing sensor value #%d: %s, %d\n", sensorValueIdx, sensor_values[sensorValueIdx].key,
+        -:  147://               sensor_values[sensorValueIdx].value);
+      600:  148:        if (!strcmp(sensor_values[sensorValueIdx].key, "W")) {
+branch  0 taken 9% (fallthrough)
+branch  1 taken 91%
+       54:  149:            frame_buffer = processMoveUp(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  150://            printBMP(width, height, frame_buffer);
+      546:  151:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "A")) {
+branch  0 taken 19% (fallthrough)
+branch  1 taken 81%
+      102:  152:            frame_buffer = processMoveLeft(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  153://            printBMP(width, height, frame_buffer);
+      444:  154:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "S")) {
+branch  0 taken 24% (fallthrough)
+branch  1 taken 76%
+      108:  155:            frame_buffer = processMoveDown(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  156://            printBMP(width, height, frame_buffer);
+      336:  157:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "D")) {
+branch  0 taken 25% (fallthrough)
+branch  1 taken 75%
+       84:  158:            frame_buffer = processMoveRight(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  159://            printBMP(width, height, frame_buffer);
+      252:  160:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "CW")) {
+branch  0 taken 26% (fallthrough)
+branch  1 taken 74%
+       66:  161:            frame_buffer = processRotateCW(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  162://            printBMP(width, height, frame_buffer);
+      186:  163:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "CCW")) {
+branch  0 taken 42% (fallthrough)
+branch  1 taken 58%
+       78:  164:            frame_buffer = processRotateCCW(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  165://            printBMP(width, height, frame_buffer);
+      108:  166:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "MX")) {
+branch  0 taken 61% (fallthrough)
+branch  1 taken 39%
+       66:  167:            frame_buffer = processMirrorX(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  168://            printBMP(width, height, frame_buffer);
+       42:  169:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "MY")) {
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+       42:  170:            frame_buffer = processMirrorY(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  171://            printBMP(width, height, frame_buffer);
+        -:  172:        }
+      600:  173:        processed_frames += 1;
+      600:  174:        if (processed_frames % 25 == 0) {
+branch  0 taken 4% (fallthrough)
+branch  1 taken 96%
+       24:  175:            verifyFrame(frame_buffer, width, height, grading_mode);
+call    0 returned 100%
+        -:  176:        }
+        -:  177:    }
+        6:  178:    return;
+        -:  179:}

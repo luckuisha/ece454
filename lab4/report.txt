@@ -1,0 +1,158 @@
+
+lab 4 report - pthreads and synchronization
+kyu bum kim 1003959100
+--------------------------------------------
+
+section 2.3 compiling
+----------------------
+
+Q1. why is it important to #ifdef out methods and datastructures that arent used for different versions of randtrack?
+
+#ifdef is a tool so that unecessary code can be ignored rather than compiled.
+therefore, without removing code for different versions, various datastructures and methods that may not be required by the current version will be created increasing the size of the program and could potentially cause conflicts between method calls and data accesses. 
+moreover, it can create confusion for the reader if various versions are all in one file without distinction of which version is currently running; the reader may be unsure of which datastructure or method to look at. 
+
+section 3.2 using transactional memory
+--------------------------------------
+
+Q2. how difficult was using TM compated to implementing global lock above?
+
+implementing tm was a lot easier compared to global lock. global lock required the initial setup of the threads. moreover, implementing global lock required analyzing the code to find the critical section for the global mutex.
+because the analysis of the code has already been done, implementing tm was simple as it was just a replacement of the global mutex.  
+
+section 3.3 list-level locks
+----------------------------
+
+Q3. can you implement this without modifying the hash class, or without knowing its internal implementation?
+
+yes. because the size of the upper bound for the hash table is given, we can create the same number of locks as the upper bound. 
+because the only section that needs to be atomic is the same, we can simply lock the critical section with the corresponding lock of the key. 
+therefore, no knowledge of its internal implementation was required. 
+
+Q4. can you properly implement this solely by modifying the has class methods lookup and insert? explain
+
+no. when modifying a variable based on a read condition, the variable can change in between because it is no longer atomic. this creates a race condition which means this implementation is flawed. 
+for example: if ({some value} == lookup(key)) { insert(key); } 
+this, the variable could be modified in between the lookup and insert. 
+therefore, list locks can not be modified by solely modifying the class methods lookup and insert because these two need to be atomic for this implementation.  
+
+Q5. can you implement this by adding to the has class a new function lookup and insert if absent? explain
+
+yes. a function can be made that would do a lookup and insert together atomically which would resolve the issue. 
+
+Q6. can you implement it by adding new methods to the hash class lock list and unlock list? explain. implement the simplest solution above that works (or a better one if you can think of one)
+
+yes. lock and unlock list would lock and unlock a list given a pointer to the list itself respectively. 
+these would need to be called outside the critical section to ensure exclusion of data. for this case, prior and after the lookup, insert, and increment. 
+for this to work, the locks themselves would have to be initialized within the hash class unlike list_lock's implementation. 
+
+Q7. how difficult was using TM compared to implementing list locking above?
+
+implementing tm was easier than list locking. once global locks was done, tm was a trivial change. list level locks required more thought than tm, such as what the lists are and how to implement a lock for each list. 
+
+
+section 3.5 element-level locks
+-------------------------------
+
+Q8. what are the pros and cons of this approach
+
+pros:
+no requirement for mutual exclusion of shared database, no race condiftions since each thread has its own hash table
+
+cons:
+space complexity is high
+must merge hash tables at the end of the program
+
+
+section 4.2 experiments to run
+------------------------------
+
++------------------------------------------+
+|    experiment elapsed time in seconds    |
++===================+======================+
+|  experiment type  |   number of threads  |
+|                   +-------+-------+------+
+|                   |   1   |   2   |   4  |
++===================+=======+=======+======+
+|     randtrack     |         10.59        |
++-------------------+-------+-------+------+
+|    global_lock    | 10.66 |  6.57 | 5.64 |
++-------------------+-------+-------+------+
+|         tm        | 13.14 | 10.33 | 6.86 |
++-------------------+-------+-------+------+
+|     list_lock     | 10.86 |  5.63 | 3.35 |
++-------------------+-------+-------+------+
+|    element_lock   | 11.27 |  5.84 | 3.25 |
++-------------------+-------+-------+------+
+
+Q9. for samples to skip set to 50, what is the overhead for each parallelization approach? report this as the runtime of the parallel version with on thread divided by the runtim of the single threaded version
+
++--------------------------------------------------------+
+| overhead for parallelization using base time of 10.59s |
++============================+===========================+
+|       experiment type      |       overhead ratio      |
++============================+===========================+
+|         global_lock        |           1.007           |
++----------------------------+---------------------------+
+|             tm             |           1.241           |
++----------------------------+---------------------------+
+|          list_lock         |           1.025           |
++----------------------------+---------------------------+
+|        element_lock        |           1.064           |
++----------------------------+---------------------------+
+
+Q10. how does each approach perform as the number of threads increases? if performance gets worse for a certain case, explain why that may have happened
+
+as the number of threads increase, the performance improves as shown through the reduced elapsed time. 
+this is because as more threads are introduced, more of the workload is distributed so the performance increases. 
+from a single thread to two threads, there exists the greatest gain in performance nearing roughly a 50% gain in most tests. From two threads to four, the drop in time is less significant than the former. 
+there seems to be diminishing returns as more threads are added to the program. perhaps this is due to the amount of threads that are waiting for another thread.
+As more threads are introduced, more threads will be waiting therefore we do not see a linear increase in performance. 
+
+Q11. repeat the data collection above with the samples to skip set to 100 and give the table. how does this change impact the results compared when set to 50? why?
+
++----------------------------------------+
+|   experiment elapsed time in seconds   |
++=================+======================+
+| experiment type |   number of threads  |
+|                 +-------+-------+------+
+|                 |   1   |   2   |   4  |
++=================+=======+=======+======+
+|    randtrack    |         20.62        |
++-----------------+-------+-------+------+
+|   global_lock   | 20.78 | 11.46 | 7.24 |
++-----------------+-------+-------+------+
+|        tm       | 23.33 | 15.42 | 9.29 |
++-----------------+-------+-------+------+
+|    list_lock    | 20.99 | 10.69 | 5.79 |
++-----------------+-------+-------+------+
+|   element_lock  | 21.38 | 10.92 | 5.93 |
++-----------------+-------+-------+------+
+
++--------------------------------------------------------+
+| overhead for parallelization using base time of 20.62s |
++==========================+=============================+
+|      experiment type     |        overhead ratio       |
++==========================+=============================+
+|        global_lock       |            1.008            |
++--------------------------+-----------------------------+
+|            tm            |            1.131            |
++--------------------------+-----------------------------+
+|         list_lock        |            1.018            |
++--------------------------+-----------------------------+
+|       element_lock       |            1.037            |
++--------------------------+-----------------------------+
+
+as we increase the number of samples to skip, we increase the number of loops for the forloop (the one that is based on samples_to_skip). Therefore, when inserting values into the hash table, for each value, we must skip double the samples per element.
+therefore, increasing the overall time for execution by around a multiple of 2. even with the introduction of threads, each element still required to loop an extra 50 cycles regardless of how many threads. 
+
+the per-thread improvement stayed relativly the same, halfing from one to two threads, and then diminishing returns as we go from two to four threads (non linear)
+
+Q12. which approach should optsrus ship? keep in mind that some customers might be using multicores with more than 4 cores, while others might have only 1 or 2 cores
+
+optsrus (OR) should ship list_lock 
+- tm had by far the worse performance. significant overhead for small gain in performance. 
+- global lock had small overhead but has weak performance metrics compared to the others. 
+- element lock performed worse than list lock by a small margin, regardless, perfomed very well. the high granulairty causes higher overhead costs and could create issues with scalability in the future. 
+- list lock performed the best. it also has little overhead and the implementation itself was quite simple so it helps with maintainability.
+ this would be the perferred method due to its sheer ability to perform very well (almost linearly) as more cores are introduced. 

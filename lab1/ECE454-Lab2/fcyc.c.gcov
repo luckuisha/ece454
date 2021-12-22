@@ -1,0 +1,362 @@
+        -:    0:Source:fcyc.c
+        -:    0:Programs:6
+        -:    1:/* Compute time used by function f */
+        -:    2:#include <stdlib.h>
+        -:    3:#include <sys/times.h>
+        -:    4:#include <stdio.h>
+        -:    5:#include <stdbool.h>
+        -:    6:
+        -:    7:#include "clock.h"
+        -:    8:#include "fcyc.h"
+        -:    9:
+        -:   10:#define K 3
+        -:   11:#define MAXSAMPLES 20
+        -:   12:#define EPSILON 0.01
+        -:   13:#define COMPENSATE 0
+        -:   14:#define CLEAR_CACHE 1
+        -:   15:#define CACHE_BYTES (1<<22)
+        -:   16:#define CACHE_BLOCK 32
+        -:   17:
+        -:   18:static int kbest = K;
+        -:   19:static int compensate = COMPENSATE;
+        -:   20:static int clear_cache = CLEAR_CACHE;
+        -:   21:static int maxsamples = MAXSAMPLES;
+        -:   22:static double epsilon = EPSILON;
+        -:   23:static int cache_bytes = CACHE_BYTES;
+        -:   24:static int cache_block = CACHE_BLOCK;
+        -:   25:
+        -:   26:static int *cache_buf = NULL;
+        -:   27:
+        -:   28:static double *values = NULL;
+        -:   29:static int samplecount = 0;
+        -:   30:
+        -:   31:#define KEEP_VALS 0
+        -:   32:#define KEEP_SAMPLES 0
+        -:   33:
+        -:   34:#if KEEP_SAMPLES
+        -:   35:static double *samples = NULL;
+        -:   36:#endif
+        -:   37:
+        -:   38:/* Start new sampling process */
+function init_sampler called 2 returned 100% blocks executed 67%
+        2:   39:static void init_sampler()
+        -:   40:{
+        2:   41:    if (values)
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   42:        free(values);
+        2:   43:    values = calloc(kbest, sizeof(double));
+        -:   44:#if KEEP_SAMPLES
+        -:   45:    if (samples)
+        -:   46:    free(samples);
+        -:   47:  /* Allocate extra for wraparound analysis */
+        -:   48:  samples = calloc(maxsamples+kbest, sizeof(double));
+        -:   49:#endif
+        2:   50:    samplecount = 0;
+        2:   51:}
+        -:   52:
+        -:   53:/* Add new sample.  */
+function add_sample called 8 returned 100% blocks executed 100%
+        8:   54:static void add_sample(double val)
+        -:   55:{
+        8:   56:    int pos = 0;
+        8:   57:    if (samplecount < kbest) {
+branch  0 taken 75% (fallthrough)
+branch  1 taken 25%
+        6:   58:        pos = samplecount;
+        6:   59:        values[pos] = val;
+        2:   60:    } else if (val < values[kbest-1]) {
+branch  0 taken 50% (fallthrough)
+branch  1 taken 50%
+        1:   61:        pos = kbest-1;
+        1:   62:        values[pos] = val;
+        -:   63:    }
+        -:   64:#if KEEP_SAMPLES
+        -:   65:    samples[samplecount] = val;
+        -:   66:#endif
+        8:   67:    samplecount++;
+        -:   68:    /* Insertion sort */
+       13:   69:    while (pos > 0 && values[pos-1] > values[pos]) {
+branch  0 taken 54% (fallthrough)
+branch  1 taken 46%
+branch  2 taken 71%
+branch  3 taken 29% (fallthrough)
+        5:   70:        double temp = values[pos-1];
+        5:   71:        values[pos-1] = values[pos];
+        5:   72:        values[pos] = temp;
+        5:   73:        pos--;
+        -:   74:    }
+        8:   75:}
+        -:   76:
+        -:   77:/* Have kbest minimum measurements converged within epsilon? */
+function has_converged called 8 returned 100% blocks executed 100%
+        8:   78:static int has_converged()
+        -:   79:{
+        -:   80:    return
+       12:   81:            (samplecount >= kbest) &&
+branch  0 taken 50% (fallthrough)
+branch  1 taken 50%
+        4:   82:            ((1 + epsilon)*values[0] >= values[kbest-1]);
+branch  0 taken 50% (fallthrough)
+branch  1 taken 50%
+        -:   83:}
+        -:   84:
+        -:   85:/* Code to clear cache */
+        -:   86:
+        -:   87:
+        -:   88:static volatile int sink = 0;
+        -:   89:
+function clear called 8 returned 100% blocks executed 75%
+        8:   90:static void clear()
+        -:   91:{
+        8:   92:    int x = sink;
+        -:   93:    int *cptr, *cend;
+        8:   94:    int incr = cache_block/sizeof(int);
+        8:   95:    if (!cache_buf) {
+branch  0 taken 13% (fallthrough)
+branch  1 taken 88%
+        1:   96:        cache_buf = malloc(cache_bytes);
+        1:   97:        if (!cache_buf) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   98:            fprintf(stderr, "Fatal error.  Malloc returned null when trying to clear cache\n");
+call    0 never executed
+    #####:   99:            exit(1);
+call    0 never executed
+        -:  100:        }
+        -:  101:    }
+        8:  102:    cptr = (int *) cache_buf;
+        8:  103:    cend = cptr + cache_bytes/sizeof(int);
+  2097160:  104:    while (cptr < cend) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+  2097152:  105:        x += *cptr;
+  2097152:  106:        cptr += incr;
+        -:  107:    }
+        8:  108:    sink = x;
+        8:  109:}
+        -:  110:
+function fcyc called 0 returned 0% blocks executed 0%
+    #####:  111:double fcyc(test_funct f, int *params)
+        -:  112:{
+        -:  113:    double result;
+    #####:  114:    init_sampler();
+call    0 never executed
+    #####:  115:    if (compensate) {
+branch  0 never executed
+branch  1 never executed
+        -:  116:        do {
+        -:  117:            double cyc;
+    #####:  118:            if (clear_cache)
+branch  0 never executed
+branch  1 never executed
+    #####:  119:                clear();
+call    0 never executed
+    #####:  120:            start_comp_counter();
+call    0 never executed
+    #####:  121:            f(params);
+call    0 never executed
+    #####:  122:            cyc = get_comp_counter();
+call    0 never executed
+    #####:  123:            add_sample(cyc);
+call    0 never executed
+    #####:  124:        } while (!has_converged() && samplecount < maxsamples);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+        -:  125:    } else {
+        -:  126:        do {
+        -:  127:            double cyc;
+    #####:  128:            if (clear_cache)
+branch  0 never executed
+branch  1 never executed
+    #####:  129:                clear();
+call    0 never executed
+    #####:  130:            start_counter();
+call    0 never executed
+    #####:  131:            f(params);
+call    0 never executed
+    #####:  132:            cyc = get_counter();
+call    0 never executed
+    #####:  133:            add_sample(cyc);
+call    0 never executed
+    #####:  134:        } while (!has_converged() && samplecount < maxsamples);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+        -:  135:    }
+        -:  136:#ifdef DEBUG
+        -:  137:    {
+        -:  138:    int i;
+        -:  139:    printf(" %d smallest values: [", kbest);
+        -:  140:    for (i = 0; i < kbest; i++)
+        -:  141:      printf("%.0f%s", values[i], i==kbest-1 ? "]\n" : ", ");
+        -:  142:  }
+        -:  143:#endif
+    #####:  144:    result = values[0];
+        -:  145:#if !KEEP_VALS
+    #####:  146:    free(values);
+    #####:  147:    values = NULL;
+        -:  148:#endif
+    #####:  149:    return result;
+        -:  150:}
+        -:  151:
+        -:  152:
+        -:  153:/* A version of the above function added so as to pass arguments of
+        -:  154:   any type to the function
+        -:  155:     Added by Sanjit, Fall 2001
+        -:  156:*/
+function fcyc_v called 2 returned 100% blocks executed 59%
+        2:  157:double fcyc_v(test_funct_v f, void *params[])
+        -:  158:{
+        -:  159:    double result;
+        2:  160:    init_sampler();
+call    0 returned 100%
+        2:  161:    if (compensate) {
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        -:  162:        do {
+        -:  163:            double cyc;
+        8:  164:            if (clear_cache)
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        8:  165:                clear();
+call    0 returned 100%
+        8:  166:            start_comp_counter();
+call    0 returned 100%
+        8:  167:            f(params);
+call    0 returned 100%
+        8:  168:            cyc = get_comp_counter();
+call    0 returned 100%
+        8:  169:            add_sample(cyc);
+call    0 returned 100%
+        8:  170:        } while (!has_converged() && samplecount < maxsamples);
+call    0 returned 100%
+branch  1 taken 75% (fallthrough)
+branch  2 taken 25%
+branch  3 taken 100%
+branch  4 taken 0%
+        -:  171:    } else {
+        -:  172:        do {
+        -:  173:            double cyc;
+    #####:  174:            if (clear_cache)
+branch  0 never executed
+branch  1 never executed
+    #####:  175:                clear();
+call    0 never executed
+    #####:  176:            start_counter();
+call    0 never executed
+    #####:  177:            f(params);
+call    0 never executed
+    #####:  178:            cyc = get_counter();
+call    0 never executed
+    #####:  179:            add_sample(cyc);
+call    0 never executed
+    #####:  180:        } while (!has_converged() && samplecount < maxsamples);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+        -:  181:    }
+        -:  182:#ifdef DEBUG
+        -:  183:    {
+        -:  184:    int i;
+        -:  185:    printf(" %d smallest values: [", kbest);
+        -:  186:    for (i = 0; i < kbest; i++)
+        -:  187:      printf("%.0f%s", values[i], i==kbest-1 ? "]\n" : ", ");
+        -:  188:  }
+        -:  189:#endif
+        2:  190:    result = values[0];
+        -:  191:#if !KEEP_VALS
+        2:  192:    free(values);
+        2:  193:    values = NULL;
+        -:  194:#endif
+        2:  195:    return result;
+        -:  196:}
+        -:  197:
+        -:  198:/***********************************************************/
+        -:  199:/* Set the various parameters used by measurement routines */
+        -:  200:
+        -:  201:
+        -:  202:/* When set, will run code to clear cache before each measurement
+        -:  203:   Default = 0
+        -:  204:*/
+function set_fcyc_clear_cache called 2 returned 100% blocks executed 100%
+        2:  205:void set_fcyc_clear_cache(int clear)
+        -:  206:{
+        2:  207:    clear_cache = clear;
+        2:  208:}
+        -:  209:
+        -:  210:/* Set size of cache to use when clearing cache
+        -:  211:   Default = 1<<19 (512KB)
+        -:  212:*/
+function set_fcyc_cache_size called 2 returned 100% blocks executed 75%
+        2:  213:void set_fcyc_cache_size(int bytes)
+        -:  214:{
+        2:  215:    if (bytes != cache_bytes) {
+branch  0 taken 50% (fallthrough)
+branch  1 taken 50%
+        1:  216:        cache_bytes = bytes;
+        1:  217:        if (cache_buf) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  218:            free(cache_buf);
+    #####:  219:            cache_buf = NULL;
+        -:  220:        }
+        -:  221:    }
+        2:  222:}
+        -:  223:
+        -:  224:/* Set size of cache block
+        -:  225:   Default = 32
+        -:  226:*/
+function set_fcyc_cache_block called 0 returned 0% blocks executed 0%
+    #####:  227:void set_fcyc_cache_block(int bytes) {
+    #####:  228:    cache_block = bytes;
+    #####:  229:}
+        -:  230:
+        -:  231:
+        -:  232:/* When set, will attempt to compensate for timer interrupt overhead
+        -:  233:   Default = 0
+        -:  234:*/
+function set_fcyc_compensate called 2 returned 100% blocks executed 100%
+        2:  235:void set_fcyc_compensate(int compensate_arg)
+        -:  236:{
+        2:  237:    compensate = compensate_arg;
+        2:  238:}
+        -:  239:
+        -:  240:/* Value of K in K-best
+        -:  241:   Default = 3
+        -:  242:*/
+function set_fcyc_k called 0 returned 0% blocks executed 0%
+    #####:  243:void set_fcyc_k(int k)
+        -:  244:{
+    #####:  245:    kbest = k;
+    #####:  246:}
+        -:  247:
+        -:  248:/* Maximum number of samples attempting to find K-best within some tolerance.
+        -:  249:   When exceeded, just return best sample found.
+        -:  250:   Default = 20
+        -:  251:*/
+function set_fcyc_maxsamples called 0 returned 0% blocks executed 0%
+    #####:  252:void set_fcyc_maxsamples(int maxsamples_arg)
+        -:  253:{
+    #####:  254:    maxsamples = maxsamples_arg;
+    #####:  255:}
+        -:  256:
+        -:  257:/* Tolerance required for K-best
+        -:  258:   Default = 0.01
+        -:  259:*/
+function set_fcyc_epsilon called 0 returned 0% blocks executed 0%
+    #####:  260:void set_fcyc_epsilon(double epsilon_arg)
+        -:  261:{
+    #####:  262:    epsilon = epsilon_arg;
+    #####:  263:}
+        -:  264:
+        -:  265:
+        -:  266:
+        -:  267:

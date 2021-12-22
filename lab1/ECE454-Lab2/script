@@ -1,0 +1,58 @@
+#!/bin/bash
+#assume you are in main folder
+
+#gprof
+echo "gprof results"
+counter=1
+while [ $counter -le 5 ]
+do
+  cd bin
+  cmake ../
+  make clean
+  cd ..
+  gcc -g -pg -no-pie ECE454-Lab2.c fcyc.c implementation.c implementation_reference.c utilities.c clock.c -o prog
+  /usr/bin/time ./prog -g -f lab1.csv -i lab1.bmp
+  echo $counter
+  ((counter++))
+done
+
+#gcov
+echo "gcov results"
+cd bin
+cmake ../
+make clean
+cd ..
+gcc -g -fprofile-arcs -ftest-coverage ECE454-Lab2.c fcyc.c implementation.c implementation_reference.c utilities.c clock.c -o prog
+
+#-g
+echo "-g results"
+cd bin
+cmake ../
+make clean
+cd ..
+gcc -g  ECE454-Lab2.c fcyc.c implementation.c implementation_reference.c utilities.c clock.c -o prog
+
+#-O2
+echo "-O2 results"
+cd bin
+cmake ../
+make clean
+cd ..
+gcc -O2 ECE454-Lab2.c fcyc.c implementation.c implementation_reference.c utilities.c clock.c -o prog
+
+#-O3
+echo "-O3 results"
+cd bin
+cmake ../
+make clean
+cd ..
+gcc -O3 ECE454-Lab2.c fcyc.c implementation.c implementation_reference.c utilities.c clock.c -o prog
+
+#-Os
+echo "-Os results"
+cd bin
+cmake ../
+make clean
+cd ..
+gcc -Os ECE454-Lab2.c fcyc.c implementation.c implementation_reference.c utilities.c clock.c -o prog
+

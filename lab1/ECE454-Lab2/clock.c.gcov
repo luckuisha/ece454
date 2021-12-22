@@ -1,0 +1,294 @@
+        -:    0:Source:clock.c
+        -:    0:Programs:6
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include <unistd.h>
+        -:    4:#include <sys/times.h>
+        -:    5:#include "clock.h"
+        -:    6:
+        -:    7:/*
+        -:    8: * Routines for using the cycle counter
+        -:    9: */
+        -:   10:
+        -:   11:/* Detect whether running on Alpha */
+        -:   12:#ifdef __alpha
+        -:   13:#define IS_ALPHA 1
+        -:   14:#else
+        -:   15:#define IS_ALPHA 0
+        -:   16:#endif
+        -:   17:
+        -:   18:/* Detect whether running on x86 */
+        -:   19:#ifdef __i386__
+        -:   20:#define IS_x86 1
+        -:   21:#elif __x86_64__
+        -:   22:#define IS_x86 1
+        -:   23:#else
+        -:   24:#define IS_x86 0
+        -:   25:#endif
+        -:   26:
+        -:   27:#if IS_ALPHA
+        -:   28:/* Initialize the cycle counter */
+        -:   29:static unsigned cyc_hi = 0;
+        -:   30:static unsigned cyc_lo = 0;
+        -:   31:
+        -:   32:
+        -:   33:/* Use Alpha cycle timer to compute cycles.  Then use
+        -:   34:   measured clock speed to compute seconds
+        -:   35:*/
+        -:   36:
+        -:   37:/*
+        -:   38: * counterRoutine is an array of Alpha instructions to access
+        -:   39: * the Alpha's processor cycle counter. It uses the rpcc
+        -:   40: * instruction to access the counter. This 64 bit register is
+        -:   41: * divided into two parts. The lower 32 bits are the cycles
+        -:   42: * used by the current process. The upper 32 bits are wall
+        -:   43: * clock cycles. These instructions read the counter, and
+        -:   44: * convert the lower 32 bits into an unsigned int - this is the
+        -:   45: * user space counter value.
+        -:   46: * NOTE: The counter has a very limited time span. With a
+        -:   47: * 450MhZ clock the counter can time things for about 9
+        -:   48: * seconds. */
+        -:   49:static unsigned int counterRoutine[] =
+        -:   50:{
+        -:   51:    0x601fc000u,
+        -:   52:    0x401f0000u,
+        -:   53:    0x6bfa8001u
+        -:   54:};
+        -:   55:
+        -:   56:/* Cast the above instructions into a function. */
+        -:   57:static unsigned int (*counter)(void)= (void *)counterRoutine;
+        -:   58:
+        -:   59:
+        -:   60:void start_counter()
+        -:   61:{
+        -:   62:    /* Get cycle counter */
+        -:   63:    cyc_hi = 0;
+        -:   64:    cyc_lo = counter();
+        -:   65:}
+        -:   66:
+        -:   67:double get_counter()
+        -:   68:{
+        -:   69:    unsigned ncyc_hi, ncyc_lo;
+        -:   70:    unsigned hi, lo, borrow;
+        -:   71:    double result;
+        -:   72:    ncyc_lo = counter();
+        -:   73:    ncyc_hi = 0;
+        -:   74:    lo = ncyc_lo - cyc_lo;
+        -:   75:    borrow = lo > ncyc_lo;
+        -:   76:    hi = ncyc_hi - cyc_hi - borrow;
+        -:   77:    result = (double) hi * (1 << 30) * 4 + lo;
+        -:   78:    if (result < 0) {
+        -:   79:	fprintf(stderr, "Error: Cycle counter returning negative value: %.0f\n", result);
+        -:   80:    }
+        -:   81:    return result;
+        -:   82:}
+        -:   83:#endif /* Alpha */
+        -:   84:
+        -:   85:#if IS_x86
+        -:   86:/* $begin x86cyclecounter */
+        -:   87:/* Initialize the cycle counter */
+        -:   88:static unsigned cyc_hi = 0;
+        -:   89:static unsigned cyc_lo = 0;
+        -:   90:
+        -:   91:
+        -:   92:/* Set *hi and *lo to the high and low order bits  of the cycle counter.
+        -:   93:   Implementation requires assembly code to use the rdtsc instruction. */
+function access_counter called 7819123 returned 100% blocks executed 100%
+  7819123:   94:void access_counter(unsigned *hi, unsigned *lo)
+        -:   95:{
+  7819123:   96:    asm("rdtsc; movl %%edx,%0; movl %%eax,%1"   /* Read cycle counter */
+        -:   97:    : "=r" (*hi), "=r" (*lo)                /* and move results to */
+        -:   98:    : /* No input */                        /* the two outputs */
+        -:   99:    : "%edx", "%eax");
+  7819123:  100:}
+        -:  101:
+        -:  102:/* Record the current value of the cycle counter. */
+function start_counter called 10 returned 100% blocks executed 100%
+       10:  103:void start_counter()
+        -:  104:{
+       10:  105:    access_counter(&cyc_hi, &cyc_lo);
+call    0 returned 100%
+       10:  106:}
+        -:  107:
+        -:  108:/* Return the number of cycles since the last call to start_counter. */
+function get_counter called 7819113 returned 100% blocks executed 80%
+  7819113:  109:double get_counter()
+        -:  110:{
+        -:  111:    unsigned ncyc_hi, ncyc_lo;
+        -:  112:    unsigned hi, lo, borrow;
+        -:  113:    double result;
+        -:  114:
+        -:  115:    /* Get cycle counter */
+  7819113:  116:    access_counter(&ncyc_hi, &ncyc_lo);
+call    0 returned 100%
+        -:  117:
+        -:  118:    /* Do double precision subtraction */
+  7819113:  119:    lo = ncyc_lo - cyc_lo;
+  7819113:  120:    borrow = lo > ncyc_lo;
+  7819113:  121:    hi = ncyc_hi - cyc_hi - borrow;
+  7819113:  122:    result = (double) hi * (1 << 30) * 4 + lo;
+  7819113:  123:    if (result < 0) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  124:        fprintf(stderr, "Error: counter returns neg value: %.0f\n", result);
+call    0 never executed
+        -:  125:    }
+  7819113:  126:    return result;
+        -:  127:}
+        -:  128:/* $end x86cyclecounter */
+        -:  129:#endif /* x86 */
+        -:  130:
+function ovhd called 0 returned 0% blocks executed 0%
+    #####:  131:double ovhd()
+        -:  132:{
+        -:  133:    /* Do it twice to eliminate cache effects */
+        -:  134:    int i;
+        -:  135:    double result;
+        -:  136:
+    #####:  137:    for (i = 0; i < 2; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  138:        start_counter();
+call    0 never executed
+    #####:  139:        result = get_counter();
+call    0 never executed
+        -:  140:    }
+    #####:  141:    return result;
+        -:  142:}
+        -:  143:
+        -:  144:/* $begin mhz */
+        -:  145:/* Estimate the clock rate by measuring the cycles that elapse */
+        -:  146:/* while sleeping for sleeptime seconds */
+function mhz_full called 0 returned 0% blocks executed 0%
+    #####:  147:double mhz_full(int verbose, int sleeptime)
+        -:  148:{
+        -:  149:    double rate;
+        -:  150:
+    #####:  151:    start_counter();
+call    0 never executed
+    #####:  152:    sleep(sleeptime);
+call    0 never executed
+    #####:  153:    rate = get_counter() / (1e6*sleeptime);
+call    0 never executed
+    #####:  154:    if (verbose)
+branch  0 never executed
+branch  1 never executed
+    #####:  155:        printf("Processor clock rate ~= %.1f MHz\n", rate);
+call    0 never executed
+    #####:  156:    return rate;
+        -:  157:}
+        -:  158:/* $end mhz */
+        -:  159:
+        -:  160:/* Version using a default sleeptime */
+function mhz called 0 returned 0% blocks executed 0%
+    #####:  161:double mhz(int verbose)
+        -:  162:{
+    #####:  163:    return mhz_full(verbose, 2);
+call    0 never executed
+        -:  164:}
+        -:  165:
+        -:  166:/** Special counters that compensate for timer interrupt overhead */
+        -:  167:
+        -:  168:static double cyc_per_tick = 0.0;
+        -:  169:
+        -:  170:#define NEVENT 100
+        -:  171:#define THRESHOLD 1000
+        -:  172:#define RECORDTHRESH 3000
+        -:  173:
+        -:  174:/* Attempt to see how much time is used by timer interrupt */
+function callibrate called 2 returned 100% blocks executed 100%
+        2:  175:static void callibrate(int verbose)
+        -:  176:{
+        -:  177:    double oldt;
+        -:  178:    struct tms t;
+        -:  179:    clock_t oldc;
+        2:  180:    int e = 0;
+        -:  181:
+        2:  182:    times(&t);
+call    0 returned 100%
+        2:  183:    oldc = t.tms_utime;
+        2:  184:    start_counter();
+call    0 returned 100%
+        2:  185:    oldt = get_counter();
+call    0 returned 100%
+  7819105:  186:    while (e <NEVENT) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+  7819103:  187:        double newt = get_counter();
+call    0 returned 100%
+        -:  188:
+  7819103:  189:        if (newt-oldt >= THRESHOLD) {
+branch  0 taken 99% (fallthrough)
+branch  1 taken 1%
+        -:  190:            clock_t newc;
+  7819088:  191:            times(&t);
+call    0 returned 100%
+  7819088:  192:            newc = t.tms_utime;
+  7819088:  193:            if (newc > oldc) {
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+      200:  194:                double cpt = (newt-oldt)/(newc-oldc);
+      200:  195:                if ((cyc_per_tick == 0.0 || cyc_per_tick > cpt) && cpt > RECORDTHRESH)
+branch  0 taken 27% (fallthrough)
+branch  1 taken 73%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+branch  4 taken 1% (fallthrough)
+branch  5 taken 99%
+        1:  196:                    cyc_per_tick = cpt;
+        -:  197:                /*
+        -:  198:                  if (verbose)
+        -:  199:                  printf("Saw event lasting %.0f cycles and %d ticks.  Ratio = %f\n",
+        -:  200:                  newt-oldt, (int) (newc-oldc), cpt);
+        -:  201:                */
+      200:  202:                e++;
+      200:  203:                oldc = newc;
+        -:  204:            }
+  7819088:  205:            oldt = newt;
+        -:  206:        }
+        -:  207:    }
+        -:  208:    /* ifdef added by Sanjit - 10/2001 */
+        -:  209:#ifdef DEBUG
+        -:  210:    if (verbose)
+        -:  211:	printf("Setting cyc_per_tick to %f\n", cyc_per_tick);
+        -:  212:#endif
+        2:  213:}
+        -:  214:
+        -:  215:static clock_t start_tick = 0;
+        -:  216:
+function start_comp_counter called 8 returned 100% blocks executed 100%
+        8:  217:void start_comp_counter()
+        -:  218:{
+        -:  219:    struct tms t;
+        -:  220:
+        8:  221:    if (cyc_per_tick == 0.0)
+branch  0 taken 25% (fallthrough)
+branch  1 taken 75%
+        2:  222:        callibrate(1);
+call    0 returned 100%
+        8:  223:    times(&t);
+call    0 returned 100%
+        8:  224:    start_tick = t.tms_utime;
+        8:  225:    start_counter();
+call    0 returned 100%
+        8:  226:}
+        -:  227:
+function get_comp_counter called 8 returned 100% blocks executed 100%
+        8:  228:double get_comp_counter()
+        -:  229:{
+        8:  230:    double time = get_counter();
+call    0 returned 100%
+        -:  231:    double ctime;
+        -:  232:    struct tms t;
+        -:  233:    clock_t ticks;
+        -:  234:
+        8:  235:    times(&t);
+call    0 returned 100%
+        8:  236:    ticks = t.tms_utime - start_tick;
+        8:  237:    ctime = time - ticks*cyc_per_tick;
+        -:  238:    /*
+        -:  239:      printf("Measured %.0f cycles.  Ticks = %d.  Corrected %.0f cycles\n",
+        -:  240:      time, (int) ticks, ctime);
+        -:  241:    */
+        8:  242:    return ctime;
+        -:  243:}

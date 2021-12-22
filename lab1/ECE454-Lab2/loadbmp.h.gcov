@@ -1,0 +1,347 @@
+        -:    0:Source:loadbmp.h
+        -:    0:Programs:6
+        -:    1:// Author: Christian Vallentin <mail@vallentinsource.com>
+        -:    2:// Website: http://vallentinsource.com
+        -:    3:// Repository: https://github.com/MrVallentin/LoadBMP
+        -:    4://
+        -:    5:// Date Created: January 03, 2014
+        -:    6:// Last Modified: August 13, 2016
+        -:    7://
+        -:    8:// Version: 1.1.0
+        -:    9:
+        -:   10:// Copyright (c) 2014-2016 Christian Vallentin <mail@vallentinsource.com>
+        -:   11://
+        -:   12:// This software is provided 'as-is', without any express or implied
+        -:   13:// warranty. In no event will the authors be held liable for any damages
+        -:   14:// arising from the use of this software.
+        -:   15://
+        -:   16:// Permission is granted to anyone to use this software for any purpose,
+        -:   17:// including commercial applications, and to alter it and redistribute it
+        -:   18:// freely, subject to the following restrictions:
+        -:   19://
+        -:   20:// 1. The origin of this software must not be misrepresented; you must not
+        -:   21://    claim that you wrote the original software. If you use this software
+        -:   22://    in a product, an acknowledgment in the product documentation would be
+        -:   23://    appreciated but is not required.
+        -:   24://
+        -:   25:// 2. Altered source versions must be plainly marked as such, and must not
+        -:   26://    be misrepresented as being the original software.
+        -:   27://
+        -:   28:// 3. This notice may not be removed or altered from any source
+        -:   29://    distribution.
+        -:   30:
+        -:   31:// Include loadbmp.h as following
+        -:   32:// to create the implementation file.
+        -:   33://
+        -:   34:// #define LOADBMP_IMPLEMENTATION
+        -:   35:// #include "loadbmp.h"
+        -:   36:
+        -:   37:#ifndef ECE454_LAB2_LOADBMP_H
+        -:   38:#define ECE454_LAB2_LOADBMP_H
+        -:   39:
+        -:   40:#ifdef __cplusplus
+        -:   41:extern "C" {
+        -:   42:#endif
+        -:   43:
+        -:   44:// Errors
+        -:   45:#define LOADBMP_NO_ERROR 0
+        -:   46:
+        -:   47:#define LOADBMP_OUT_OF_MEMORY 1
+        -:   48:
+        -:   49:#define LOADBMP_FILE_NOT_FOUND 2
+        -:   50:#define LOADBMP_FILE_OPERATION 3
+        -:   51:
+        -:   52:#define LOADBMP_INVALID_FILE_FORMAT 4
+        -:   53:
+        -:   54:#define LOADBMP_INVALID_SIGNATURE 5
+        -:   55:#define LOADBMP_INVALID_BITS_PER_PIXEL 6
+        -:   56:
+        -:   57:
+        -:   58:// Components
+        -:   59:#define LOADBMP_RGB  3
+        -:   60:#define LOADBMP_RGBA 4
+        -:   61:
+        -:   62:
+        -:   63:#ifdef LOADBMP_IMPLEMENTATION
+        -:   64:#	define LOADBMP_API
+        -:   65:#else
+        -:   66:#	define LOADBMP_API extern
+        -:   67:#endif
+        -:   68:
+        -:   69:
+        -:   70:// LoadBMP uses raw buffers and support RGB and RGBA formats.
+        -:   71:// The order is RGBRGBRGB... or RGBARGBARGBA..., from top left
+        -:   72:// to bottom right, without any padding.
+        -:   73:
+        -:   74:
+        -:   75:LOADBMP_API unsigned int loadbmp_decode_file(
+        -:   76:        const char *filename, unsigned char **imageData, unsigned int *width, unsigned int *height, unsigned int components);
+        -:   77:
+        -:   78:LOADBMP_API unsigned int loadbmp_encode_file(
+        -:   79:        const char *filename, const unsigned char *imageData, unsigned int width, unsigned int height, unsigned int components);
+        -:   80:
+        -:   81:
+        -:   82:#ifdef LOADBMP_IMPLEMENTATION
+        -:   83:
+        -:   84:// Disable Microsoft Visual C++ compiler security warnings for fopen, strcpy, etc being unsafe
+        -:   85:#if defined(_MSC_VER) && (_MSC_VER >= 1310)
+        -:   86:#	pragma warning(disable: 4996)
+        -:   87:#endif
+        -:   88:
+        -:   89:#include <stdlib.h> /* malloc(), free() */
+        -:   90:#include <string.h> /* memset(), memcpy() */
+        -:   91:#include <stdio.h> /* fopen(), fwrite(), fread(), fclose() */
+        -:   92:
+        -:   93:
+function loadbmp_decode_file called 1 returned 100% blocks executed 61%
+        1:   94:LOADBMP_API unsigned int loadbmp_decode_file(
+        -:   95:        const char *filename, unsigned char **imageData, unsigned int *width, unsigned int *height, unsigned int components)
+        -:   96:{
+        1:   97:    FILE *f = fopen(filename, "rb");
+call    0 returned 100%
+        -:   98:
+        1:   99:    if (!f)
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  100:        return LOADBMP_FILE_NOT_FOUND;
+        -:  101:
+        -:  102:    unsigned char bmp_file_header[14];
+        -:  103:    unsigned char bmp_info_header[40];
+        -:  104:    unsigned char bmp_pad[3];
+        -:  105:
+        -:  106:    unsigned int w, h;
+        1:  107:    unsigned char *data = NULL;
+        -:  108:
+        -:  109:    unsigned int x, y, i, padding;
+        -:  110:
+        1:  111:    memset(bmp_file_header, 0, sizeof(bmp_file_header));
+        1:  112:    memset(bmp_info_header, 0, sizeof(bmp_info_header));
+        -:  113:
+        1:  114:    if (fread(bmp_file_header, sizeof(bmp_file_header), 1, f) == 0)
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+        -:  115:    {
+    #####:  116:        fclose(f);
+call    0 never executed
+    #####:  117:        return LOADBMP_INVALID_FILE_FORMAT;
+        -:  118:    }
+        -:  119:
+        1:  120:    if (fread(bmp_info_header, sizeof(bmp_info_header), 1, f) == 0)
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+        -:  121:    {
+    #####:  122:        fclose(f);
+call    0 never executed
+    #####:  123:        return LOADBMP_INVALID_FILE_FORMAT;
+        -:  124:    }
+        -:  125:
+        1:  126:    if ((bmp_file_header[0] != 'B') || (bmp_file_header[1] != 'M'))
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 0% (fallthrough)
+branch  3 taken 100%
+        -:  127:    {
+    #####:  128:        fclose(f);
+call    0 never executed
+    #####:  129:        return LOADBMP_INVALID_SIGNATURE;
+        -:  130:    }
+        -:  131:
+       1*:  132:    if ((bmp_info_header[14] != 24) && (bmp_info_header[14] != 32))
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+branch  2 never executed
+branch  3 never executed
+        -:  133:    {
+    #####:  134:        fclose(f);
+call    0 never executed
+    #####:  135:        return LOADBMP_INVALID_BITS_PER_PIXEL;
+        -:  136:    }
+        -:  137:
+        1:  138:    w = (bmp_info_header[4] + (bmp_info_header[5] << 8) + (bmp_info_header[6] << 16) + (bmp_info_header[7] << 24));
+        1:  139:    h = (bmp_info_header[8] + (bmp_info_header[9] << 8) + (bmp_info_header[10] << 16) + (bmp_info_header[11] << 24));
+        -:  140:
+        1:  141:    if ((w > 0) && (h > 0))
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+        -:  142:    {
+        1:  143:        data = (unsigned char*)malloc(w * h * components);
+        -:  144:
+        1:  145:        if (!data)
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+        -:  146:        {
+    #####:  147:            fclose(f);
+call    0 never executed
+    #####:  148:            return LOADBMP_OUT_OF_MEMORY;
+        -:  149:        }
+        -:  150:
+     1251:  151:        for (y = (h - 1); y != -1; y--)
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+        -:  152:        {
+  1563750:  153:            for (x = 0; x < w; x++)
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+        -:  154:            {
+  1562500:  155:                i = (x + y * w) * components;
+        -:  156:
+  1562500:  157:                if (fread(data + i, 3, 1, f) == 0)
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+        -:  158:                {
+    #####:  159:                    free(data);
+        -:  160:
+    #####:  161:                    fclose(f);
+call    0 never executed
+    #####:  162:                    return LOADBMP_INVALID_FILE_FORMAT;
+        -:  163:                }
+        -:  164:
+  1562500:  165:                data[i] ^= data[i + 2] ^= data[i] ^= data[i + 2]; // BGR -> RGB
+        -:  166:
+  1562500:  167:                if (components == LOADBMP_RGBA)
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  168:                    data[i + 3] = 255;
+        -:  169:            }
+        -:  170:
+     1250:  171:            padding = ((4 - (w * 3) % 4) % 4);
+        -:  172:
+     1250:  173:            if (fread(bmp_pad, 1, padding, f) != padding)
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+        -:  174:            {
+    #####:  175:                free(data);
+        -:  176:
+    #####:  177:                fclose(f);
+call    0 never executed
+    #####:  178:                return LOADBMP_INVALID_FILE_FORMAT;
+        -:  179:            }
+        -:  180:        }
+        -:  181:    }
+        -:  182:
+        1:  183:    (*width) = w;
+        1:  184:    (*height) = h;
+        1:  185:    (*imageData) = data;
+        -:  186:
+        1:  187:    fclose(f);
+call    0 returned 100%
+        -:  188:
+        1:  189:    return LOADBMP_NO_ERROR;
+        -:  190:}
+        -:  191:
+        -:  192:
+function loadbmp_encode_file called 0 returned 0% blocks executed 0%
+    #####:  193:LOADBMP_API unsigned int loadbmp_encode_file(
+        -:  194:        const char *filename, const unsigned char *imageData, unsigned int width, unsigned int height, unsigned int components)
+        -:  195:{
+    #####:  196:    FILE *f = fopen(filename, "wb");
+call    0 never executed
+        -:  197:
+    #####:  198:    if (!f)
+branch  0 never executed
+branch  1 never executed
+    #####:  199:        return LOADBMP_FILE_OPERATION;
+        -:  200:
+    #####:  201:    unsigned char bmp_file_header[14] = { 'B', 'M', 0, 0, 0, 0, 0, 0, 0, 0, 54, 0, 0, 0 };
+    #####:  202:    unsigned char bmp_info_header[40] = { 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 24, 0 };
+    #####:  203:    const unsigned char bmp_pad[3] = { 0, 0, 0 };
+        -:  204:
+    #####:  205:    const unsigned int size = 54 + width * height * 3; // 3 as the BMP format uses 3 channels (red, green, blue and NO alpha)
+        -:  206:
+        -:  207:    unsigned int x, y, i, padding;
+        -:  208:
+        -:  209:    unsigned char pixel[3];
+        -:  210:
+    #####:  211:    bmp_file_header[2] = (unsigned char)(size);
+    #####:  212:    bmp_file_header[3] = (unsigned char)(size >> 8);
+    #####:  213:    bmp_file_header[4] = (unsigned char)(size >> 16);
+    #####:  214:    bmp_file_header[5] = (unsigned char)(size >> 24);
+        -:  215:
+    #####:  216:    bmp_info_header[4] = (unsigned char)(width);
+    #####:  217:    bmp_info_header[5] = (unsigned char)(width >> 8);
+    #####:  218:    bmp_info_header[6] = (unsigned char)(width >> 16);
+    #####:  219:    bmp_info_header[7] = (unsigned char)(width >> 24);
+        -:  220:
+    #####:  221:    bmp_info_header[8] = (unsigned char)(height);
+    #####:  222:    bmp_info_header[9] = (unsigned char)(height >> 8);
+    #####:  223:    bmp_info_header[10] = (unsigned char)(height >> 16);
+    #####:  224:    bmp_info_header[11] = (unsigned char)(height >> 24);
+        -:  225:
+    #####:  226:    if (fwrite(bmp_file_header, 14, 1, f) == 0)
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  227:    {
+    #####:  228:        fclose(f);
+call    0 never executed
+    #####:  229:        return LOADBMP_FILE_OPERATION;
+        -:  230:    }
+        -:  231:
+    #####:  232:    if (fwrite(bmp_info_header, 40, 1, f) == 0)
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  233:    {
+    #####:  234:        fclose(f);
+call    0 never executed
+    #####:  235:        return LOADBMP_FILE_OPERATION;
+        -:  236:    }
+        -:  237:
+    #####:  238:    for (y = (height - 1); y != -1; y--)
+branch  0 never executed
+branch  1 never executed
+        -:  239:    {
+    #####:  240:        for (x = 0; x < width; x++)
+branch  0 never executed
+branch  1 never executed
+        -:  241:        {
+    #####:  242:            i = (x + y * width) * components;
+        -:  243:
+    #####:  244:            memcpy(pixel, imageData + i, sizeof(pixel));
+        -:  245:
+    #####:  246:            pixel[0] ^= pixel[2] ^= pixel[0] ^= pixel[2]; // RGB -> BGR
+        -:  247:
+    #####:  248:            if (fwrite(pixel, sizeof(pixel), 1, f) == 0)
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  249:            {
+    #####:  250:                fclose(f);
+call    0 never executed
+    #####:  251:                return LOADBMP_FILE_OPERATION;
+        -:  252:            }
+        -:  253:        }
+        -:  254:
+    #####:  255:        padding = ((4 - (width * 3) % 4) % 4);
+        -:  256:
+    #####:  257:        if (fwrite(bmp_pad, 1, padding, f) != padding)
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  258:        {
+    #####:  259:            fclose(f);
+call    0 never executed
+    #####:  260:            return LOADBMP_FILE_OPERATION;
+        -:  261:        }
+        -:  262:    }
+        -:  263:
+    #####:  264:    fclose(f);
+call    0 never executed
+        -:  265:
+    #####:  266:    return LOADBMP_NO_ERROR;
+        -:  267:}
+        -:  268:
+        -:  269:
+        -:  270:#endif
+        -:  271:
+        -:  272:#ifdef __cplusplus
+        -:  273:}
+        -:  274:#endif
+        -:  275:
+        -:  276:#endif //ECE454_LAB2_LOADBMP_H

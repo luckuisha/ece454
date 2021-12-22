@@ -1,0 +1,387 @@
+        -:    0:Source:ECE454-Lab2.c
+        -:    0:Programs:6
+        -:    1:#include <ctype.h>
+        -:    2:#include <stdio.h>
+        -:    3:#include <stdlib.h>
+        -:    4:#include <unistd.h>
+        -:    5:#include <memory.h>
+        -:    6:#include <stdbool.h>
+        -:    7:
+        -:    8:// Bitmap Image Library
+        -:    9:#define LOADBMP_IMPLEMENTATION
+        -:   10:#include "loadbmp.h"
+        -:   11:
+        -:   12:// Lab2 Common Libraries
+        -:   13:#include "utilities.h"
+        -:   14:
+        -:   15:// Lab2 Benchmark Library
+        -:   16:#include "fcyc.h"
+        -:   17:
+        -:   18:// Lab2 Reference Implementation
+        -:   19:#include "implementation_reference.h"
+        -:   20:
+        -:   21:// Lab2 Your Implementation
+        -:   22:#include "implementation.h"
+        -:   23:
+        -:   24:// save compiler switches to disable pointer casting compilation warnings
+        -:   25:// this part of the code is only needed to maintain instrumentation compatibility
+        -:   26:#pragma GCC diagnostic push
+        -:   27:#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+        -:   28:#pragma GCC diagnostic ignored "-Wint-conversion"
+        -:   29:#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
+        -:   30:
+function implementation_driver_reference_wraper called 3 returned 100% blocks executed 100%
+        3:   31:void implementation_driver_reference_wraper(void *argv[]){
+        3:   32:    struct kv *sensor_values    = (struct kv *)     argv[0];
+        3:   33:    int sensor_values_count     = (int)             argv[1];
+        3:   34:    unsigned char *frame_buffer = (unsigned char *) argv[2];
+        3:   35:    int width                   = (unsigned int)    argv[3];
+        3:   36:    int height                  = (unsigned int)    argv[4];
+        3:   37:    bool grading_mode           = (bool)            argv[4];
+        -:   38:
+        -:   39:    // Provide fresh copy of input frame buffer
+        3:   40:    unsigned char *frame_copy = allocateFrame(width, height);
+call    0 returned 100%
+        3:   41:    frame_copy = copyFrame(frame_buffer, frame_copy, width, height);
+call    0 returned 100%
+        -:   42:
+        3:   43:    implementation_driver_reference(sensor_values, sensor_values_count,
+call    0 returned 100%
+        -:   44:                                    frame_copy, width, height,
+        -:   45:                                    grading_mode);
+        -:   46:
+        3:   47:    deallocateFrame(frame_copy);
+call    0 returned 100%
+        3:   48:}
+        -:   49:
+function implementation_driver_wraper called 5 returned 100% blocks executed 100%
+        5:   50:void implementation_driver_wraper(void *argv[]){
+        5:   51:    struct kv *sensor_values    = (struct kv *)     argv[0];
+        5:   52:    int sensor_values_count     = (int)             argv[1];
+        5:   53:    unsigned char *frame_buffer = (unsigned char *) argv[2];
+        5:   54:    int width                   = (unsigned int)    argv[3];
+        5:   55:    int height                  = (unsigned int)    argv[4];
+        5:   56:    bool grading_mode           = (bool)            argv[4];
+        -:   57:
+        -:   58:    // Provide fresh copy of input frame buffer
+        5:   59:    unsigned char *frame_copy = allocateFrame(width, height);
+call    0 returned 100%
+        5:   60:    frame_copy = copyFrame(frame_buffer, frame_copy, width, height);
+call    0 returned 100%
+        -:   61:
+        5:   62:    implementation_driver(sensor_values, sensor_values_count,
+call    0 returned 100%
+        -:   63:                          frame_copy, width, height,
+        -:   64:                          grading_mode);
+        -:   65:
+        5:   66:    deallocateFrame(frame_copy);
+call    0 returned 100%
+        5:   67:}
+        -:   68:// restore compiler switches
+        -:   69:#pragma GCC diagnostic pop
+        -:   70:
+        -:   71:/***********************************************************************************************************************
+        -:   72: * Warning: DO NOT MODIFY or SUBMIT this file
+        -:   73: **********************************************************************************************************************/
+function main called 1 returned 100% blocks executed 62%
+        1:   74:int main(int argc, char **argv) {
+        -:   75:    /*******************************************************************************************************************
+        -:   76:     * Below are the five input parameters which you care about for your lab2 implementation:
+        -:   77:     *******************************************************************************************************************
+        -:   78:     * 1) frame_buffer: This pointer pointing to a buffer storing the imported  24-bit bitmap image
+        -:   79:     *      - This is a 1D array representing 24bit bitmap pixels.
+        -:   80:     *      - Each element of the array is 8-bit char* which contains the value(0-255) of a sub-pixel (Red, Green, Blue)
+        -:   81:     *      - frame_buffer elements are organized as groups of sub-pixels: frame_buffer = [R][G][B][R][G][B][R][G][B]...
+        -:   82:     * 2) width: width of the imported 24-bit bitmap image
+        -:   83:     * 3) height: height of the imported 24-bit bitmap image
+        -:   84:     * 4) sensor_values_count: number of valid sensor values parsed from sensor log file or commandline console
+        -:   85:     * 4) sensor_values: this structure stores parsed key value pairs of program instructions
+        -:   86:     *      a) <W,offset> - move object inside frame buffer up by <offset> pixels
+        -:   87:     *      b) <A,offset> - move object inside frame buffer left by <offset> pixels
+        -:   88:     *      c) <S,offset> - move object inside frame buffer down by <offset> pixels
+        -:   89:     *      d) <D,offset> - move object inside frame buffer right by <offset> pixels
+        -:   90:     *      e) <CW,iteration> - rotate object inside frame buffer clockwise by 90 degrees, <iteration> times
+        -:   91:     *          - i.e. <CW,3> refers to rotating clockwise by 270 degrees or counter clockwise by 90 degrees
+        -:   92:     *      f) <CCW, iteration> - rotate object inside frame buffer counter clockwise by 90 degrees, <iteration> times
+        -:   93:     *      g) <MX,_unused> - mirror the frame buffer on the X axis
+        -:   94:     *          - i.e. after rendering, first row of pixels becomes the last row of pixels
+        -:   95:     *      h) <MY,_unused> - mirror the frame buffer on the Y axis
+        -:   96:     *          - i.e. after rendering, first column of pixels becomes the last column of pixels
+        -:   97:     * 5) grading_mode: passing this parameter in your lab2 will turn off the verification and turn on instrumentation
+        -:   98:     ******************************************************************************************************************/
+        1:   99:    unsigned char *frame_buffer = NULL;
+        -:  100:    unsigned int width, height;
+        1:  101:    int sensor_values_count = 0;
+        -:  102:    struct kv sensor_values[10240];
+        1:  103:    bool grading_mode = false;
+        -:  104:
+        -:  105:    /*******************************************************************************************************************
+        -:  106:     * Commandline options parsing script:
+        -:  107:     *******************************************************************************************************************
+        -:  108:     * Usage: ./ECE454-Lab2 [options]
+        -:  109:     *
+        -:  110:     * Mandatory Options:
+        -:  111:     * -f [file path]   relative or absolute file path of the sensor value input csv file
+        -:  112:     *                  - each line of the csv file is in the specific format: <key,value>\n
+        -:  113:     *                  - note: you may also input csv values via console input using "-c [comma separate k & v]"
+        -:  114:     *                      - you may only use either -f or -c flag, using both will result with an error
+        -:  115:     *
+        -:  116:     * -c [comma separate k & v]    console input for sensor value (used for quick testing purpose)
+        -:  117:     *                              - note: you may also specify a sensor value input file, see -f flag
+        -:  118:     *
+        -:  119:     * -i [file path]   relative or absolute file path of the initial bitmap image file to load into frame buffer
+        -:  120:     *                  - note: only use bitmap files with OS/2 bitmap headers
+        -:  121:     *                      - on windows, use paint to create and save as 24bit bitmap image
+        -:  122:     *                      - on linux, use GIMP and save as 24bit G8 R8 B8 format with color space information disabled
+        -:  123:     *
+        -:  124:     * Optional Options:
+        -:  125:     * -g               grading mode
+        -:  126:     *                  - Using this mode runs your lab2 implementation for 2 times.
+        -:  127:     *                      1) first iteration runs your implementation and verifies implementation results
+        -:  128:     *                      2) second iteration turns on the instrumentation and turns off the the verifcation
+        -:  129:     *                  - Any attempt to tamper or bypass verification or instrumentation mechanism will result
+        -:  130:     *                    a "0%" lab2 grade assigned by default if found. i.e. do not design your implementation
+        -:  131:     *                    such that program takes two different paths when grading option is toggled.
+        -:  132:     ******************************************************************************************************************/
+        1:  133:    int fflag = 0, cflag = 0, iflag = 0, rflag = 0, option;
+        -:  134:
+        4:  135:    while ((option = getopt(argc, argv, "c:f:i:rg")) != -1)
+call    0 returned 100%
+branch  1 taken 75%
+branch  2 taken 25% (fallthrough)
+        3:  136:        switch (option) {
+branch  0 taken 0%
+branch  1 taken 33%
+branch  2 taken 33%
+branch  3 taken 0%
+branch  4 taken 33%
+branch  5 taken 0%
+branch  6 taken 0%
+    #####:  137:            case 'c':   // import sensor log from console argument input
+    #####:  138:                if (fflag == 1) {
+branch  0 never executed
+branch  1 never executed
+    #####:  139:                    fprintf(stderr, "Cannot import sensor log from file and console argument at the same time");
+call    0 never executed
+    #####:  140:                    return 1;
+        -:  141:                } else {
+    #####:  142:                    cflag = 1;
+    #####:  143:                    printf("Loading input sensor input from console argument: %s\n", optarg);
+call    0 never executed
+        -:  144:
+        -:  145:                    // obtain the first key value pair
+    #####:  146:                    sensor_values[sensor_values_count].key = strtok(optarg, ",\n");
+call    0 never executed
+    #####:  147:                    sensor_values[sensor_values_count].value = atoi(strtok(NULL, ",\n"));
+call    0 never executed
+        -:  148:
+        -:  149:                    // obtain more kv pair if there is more
+    #####:  150:                    while (sensor_values[sensor_values_count].key != NULL) {
+branch  0 never executed
+branch  1 never executed
+    #####:  151:                        sensor_values_count += 1;
+    #####:  152:                        sensor_values[sensor_values_count].key = strtok(NULL, ",\n");
+call    0 never executed
+    #####:  153:                        sensor_values[sensor_values_count].value = atoi(strtok(NULL, ",\n"));
+call    0 never executed
+        -:  154:                    }
+        -:  155:                }
+    #####:  156:                break;
+        1:  157:            case 'f':   // import sensor logs from file
+        1:  158:                if (cflag == 1) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  159:                    fprintf(stderr, "Cannot import sensor log from file and console argument at the same time");
+call    0 never executed
+    #####:  160:                    return 1;
+        -:  161:                } else {
+        1:  162:                    fflag = 1;
+        1:  163:                    printf("Loading input sensor input from file: %s\n", optarg);
+call    0 returned 100%
+        1:  164:                    FILE *fp = fopen(optarg, "r");
+call    0 returned 100%
+        1:  165:                    if (fp != NULL) {
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        -:  166:                        char line[128];     // each line of the sensor input file can only be 128 characters long
+        1:  167:                        char *token = NULL;
+      101:  168:                        while (fgets(line, sizeof line, fp) != NULL) {
+call    0 returned 100%
+branch  1 taken 99%
+branch  2 taken 1% (fallthrough)
+      100:  169:                            token = strtok(line, ",\n");
+call    0 returned 100%
+      100:  170:                            sensor_values[sensor_values_count].key = (char *) malloc(
+      100:  171:                                    (strlen(token) + 1) * sizeof(char));
+      100:  172:                            strcpy(sensor_values[sensor_values_count].key, token);
+      100:  173:                            token = strtok(NULL, ",\n");
+call    0 returned 100%
+      100:  174:                            sensor_values[sensor_values_count].value = atoi(token);
+      100:  175:                            sensor_values_count += 1;
+        -:  176:                        }
+        1:  177:                        fclose(fp);
+call    0 returned 100%
+        -:  178:                    } else {
+    #####:  179:                        fprintf(stderr, "Error: Cannot open sensor input file: %s\n", optarg);
+call    0 never executed
+    #####:  180:                        fclose(fp);
+call    0 never executed
+    #####:  181:                        return 1;
+        -:  182:                    }
+        -:  183:                }
+        1:  184:                break;
+        1:  185:            case 'i':   // initial 2D object bmp image location
+        1:  186:                iflag = 1;
+        1:  187:                printf("Loading initial 2D object bmp image from file: %s\n", optarg);
+call    0 returned 100%
+        -:  188:
+        1:  189:                unsigned int err = loadbmp_decode_file(optarg, &frame_buffer, &width, &height, LOADBMP_RGB);
+call    0 returned 100%
+        1:  190:                if (err)
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  191:                    fprintf(stderr, "LoadBMP Load Error: %u\n", err);
+call    0 never executed
+        1:  192:                break;
+    #####:  193:            case 'r':   // run reference implementation
+    #####:  194:                rflag = 1;
+    #####:  195:                break;
+        1:  196:            case 'g':   // grading mode
+        1:  197:                grading_mode = true;
+        1:  198:                break;
+    #####:  199:            case '?':
+    #####:  200:                if (optopt == 'f' || optopt == 'c' || optopt == 'i') {
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:  201:                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+call    0 never executed
+    #####:  202:                    return (-1);
+    #####:  203:                } else if (isprint (optopt))
+branch  0 never executed
+branch  1 never executed
+    #####:  204:                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+call    0 never executed
+        -:  205:                else
+    #####:  206:                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+call    0 never executed
+    #####:  207:                return 1;
+    #####:  208:            default:
+    #####:  209:                abort();
+call    0 never executed
+        -:  210:        }
+       1*:  211:    if (!(fflag || cflag)) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+branch  2 never executed
+branch  3 never executed
+    #####:  212:        fprintf(stderr, "Must import sensor log data either from file or console argument\n");
+call    0 never executed
+        -:  213:    }
+        1:  214:    if (!iflag) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  215:        fprintf(stderr, "Must import initial 2d object bitmap image from file via console argument\n");
+call    0 never executed
+        -:  216:    }
+        -:  217:
+        -:  218:    // Interface to your lab 2 implementation
+        1:  219:    print_team_info();
+call    0 returned 100%
+        -:  220:
+        -:  221:
+        1:  222:    printf("*******************************************************************************************************\n");
+call    0 returned 100%
+        -:  223://    printf("initial bmp\n");
+        -:  224://    printBMP(width, height, frame_buffer);
+        -:  225:
+        -:  226:    // Measure the performance of student's solution
+        1:  227:    unsigned char *frame_copy = allocateFrame(width, height);
+call    0 returned 100%
+        1:  228:    if (grading_mode) {
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        1:  229:        printf("Performance Results: \n");
+call    0 returned 100%
+        -:  230:        // note: due to the way the fcyc benchmark utility is designed, it only takes an array as parameter input.
+        -:  231:        // We created a warper function which takes an array as input, then calls the appropriate method.
+        -:  232:        // In this case, we do not need to modify the instrumentation library.
+        -:  233:
+        -:  234:        // save compiler switches to disable pointer casting compilation warnings
+        -:  235:        // this part of the code is only needed to maintain instrumentation compatibility
+        -:  236:        #pragma GCC diagnostic push
+        -:  237:        #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+        -:  238:
+        -:  239:        // start instrumentation
+        -:  240:        // Prepare array of parameter input
+        -:  241:        void *arglist[6];
+        1:  242:        bool boolVar = true;
+        1:  243:        arglist[0] = (void *)sensor_values;
+        1:  244:        arglist[1] = (void *)sensor_values_count;
+        1:  245:        arglist[2] = (void *)frame_copy;
+        1:  246:        arglist[3] = (void *)width;
+        1:  247:        arglist[4] = (void *)height;
+        1:  248:        arglist[5] = (void *)boolVar;
+        -:  249:
+        -:  250:        // restore compiler switches
+        -:  251:        #pragma GCC diagnostic pop
+        -:  252:
+        -:  253:        // Provide fresh copy of input frame buffer
+        1:  254:        copyFrame(frame_buffer, frame_copy, width, height);
+call    0 returned 100%
+        -:  255:        // Instrument implementation_driver_reference()
+        1:  256:        set_fcyc_cache_size(1 << 23);   // 8MB cache size - Core i7 4970 L3 Cache Size
+call    0 returned 100%
+        1:  257:        set_fcyc_clear_cache(1);        // clear the cache before each measurement
+call    0 returned 100%
+        1:  258:        set_fcyc_compensate(1);         // try to compensate for timer overhead
+call    0 returned 100%
+        -:  259:
+        1:  260:        double num_cycles_reference = fcyc_v((test_funct_v)&implementation_driver_reference_wraper, arglist);
+call    0 returned 100%
+        1:  261:        printf("\tNumber of cpu cycles consumed by the reference implementation: %.0f\n", num_cycles_reference);
+call    0 returned 100%
+        -:  262:
+        -:  263:        // Provide fresh copy of input frame buffer
+        1:  264:        copyFrame(frame_buffer, frame_copy, width, height);
+call    0 returned 100%
+        -:  265:        // Instrument implementation_driver()
+        1:  266:        set_fcyc_cache_size(1 << 23);   // 8MB cache size - Core i7 4970 L3 Cache Size
+call    0 returned 100%
+        1:  267:        set_fcyc_clear_cache(1);        // clear the cache before each measurement
+call    0 returned 100%
+        1:  268:        set_fcyc_compensate(1);         // try to compensate for timer overhead
+call    0 returned 100%
+        1:  269:        double num_cycles_optimized = fcyc_v((test_funct_v)&implementation_driver_wraper, arglist);
+call    0 returned 100%
+        1:  270:        printf("\tNumber of cpu cycles consumed by your implementation: %.0f\n", num_cycles_optimized);
+call    0 returned 100%
+        -:  271:
+        -:  272:        // End instrumentation
+        1:  273:        verifiedAllFramesGrading();
+call    0 returned 100%
+        -:  274:
+        -:  275:        // Compute simple speedup statistics - round speedup to the nearest integer
+        1:  276:        printf("\tOptimization Speedup Ratio (nearest integer): %d\n", (int)((num_cycles_reference / num_cycles_optimized) + 0.5));
+call    0 returned 100%
+        1:  277:        printf("*******************************************************************************************************\n");
+call    0 returned 100%
+        -:  278:    }
+        -:  279:
+        -:  280:    // Check the correctness of student's solution
+        1:  281:    copyFrame(frame_buffer, frame_copy, width, height);
+call    0 returned 100%
+        1:  282:    implementation_driver_reference(sensor_values, sensor_values_count, frame_copy, width, height, false);
+call    0 returned 100%
+        1:  283:    copyFrame(frame_buffer, frame_copy, width, height);
+call    0 returned 100%
+        1:  284:    implementation_driver(sensor_values, sensor_values_count, frame_copy, width, height, false);
+call    0 returned 100%
+        1:  285:    verifiedAllFrames();
+call    0 returned 100%
+        -:  286:
+        1:  287:    return 0;
+        -:  288:}

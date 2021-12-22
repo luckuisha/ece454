@@ -1,0 +1,15 @@
+i have tried to implement GOL by using bitwise manipulation on each cell, counting the number of neighbors. 
+with this, keeping a list of cells that are changing in the next generation. 
+
+the current implementation, i optimize the sequential solution. 
+there were way too many branch prediction failures within the naive solution (ie, the mod checks every cell and if its on the edge)
+to solve this, i hard coded the edge cases so there would no longer be branch prediction misses. 
+
+another slow aspect of the code was the number of reads.
+each read of the prior cell can keep track of the next cells neighbours, reducing reads and speeding up code. 
+
+finally, i added a lookup to check the next status of the cell rather than doing the calculations manually. 
+
+changed to row order for caching. 
+
+multithreaded, compiler flags, and thread affinity. 

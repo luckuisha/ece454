@@ -1,0 +1,4 @@
+teamName: xxx
+student1_fullName: kyuu bum kim
+student1_studentNumber: 1003969100
+student1_email: kb.kim@mail.utoronto.ca

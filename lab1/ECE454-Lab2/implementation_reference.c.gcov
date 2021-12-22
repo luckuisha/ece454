@@ -1,0 +1,531 @@
+        -:    0:Source:implementation_reference.c
+        -:    0:Programs:6
+        -:    1:#include <stdio.h>
+        -:    2:#include <string.h>
+        -:    3:#include <stdbool.h>
+        -:    4:#include "utilities.h"
+        -:    5:
+        -:    6:/***********************************************************************************************************************
+        -:    7: * Warning: DO NOT MODIFY or SUBMIT this file
+        -:    8: **********************************************************************************************************************/
+        -:    9:// Declariations
+        -:   10:unsigned char *processMoveUpReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
+        -:   11:unsigned char *processMoveLeftReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
+        -:   12:unsigned char *processMoveDownReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
+        -:   13:unsigned char *processMoveRightReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
+        -:   14:unsigned char *processRotateCWReference(unsigned char *buffer_frame, unsigned width, unsigned height,
+        -:   15:                                        int rotate_iteration);
+        -:   16:unsigned char *processRotateCCWReference(unsigned char *buffer_frame, unsigned width, unsigned height,
+        -:   17:                                        int rotate_iteration);
+        -:   18:
+        -:   19:
+        -:   20:/***********************************************************************************************************************
+        -:   21: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   22: * @param width - width of the imported 24-bit bitmap image
+        -:   23: * @param height - height of the imported 24-bit bitmap image
+        -:   24: * @param offset - number of pixels to shift the object in bitmap image up
+        -:   25: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   26: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:   27: * Note2: You can assume the object will never be moved off the screen
+        -:   28: **********************************************************************************************************************/
+function processMoveUpReference called 180 returned 100% blocks executed 90%
+      180:   29:unsigned char *processMoveUpReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+        -:   30:    // handle negative offsets
+      180:   31:    if (offset < 0){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   32:        return processMoveDownReference(buffer_frame, width, height, offset * -1);
+call    0 never executed
+        -:   33:    }
+        -:   34:
+        -:   35:    // allocate memory for temporary image buffer
+      180:   36:    unsigned char *rendered_frame = allocateFrame(width, height);
+call    0 returned 100%
+        -:   37:
+        -:   38:    // store shifted pixels to temporary buffer
+   224450:   39:    for (int row = 0; row < (height - offset); row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+280561770:   40:        for (int column = 0; column < width; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+280337500:   41:            int position_rendered_frame = row * width * 3 + column * 3;
+280337500:   42:            int position_buffer_frame = (row + offset) * width * 3 + column * 3;
+280337500:   43:            rendered_frame[position_rendered_frame] = buffer_frame[position_buffer_frame];
+280337500:   44:            rendered_frame[position_rendered_frame + 1] = buffer_frame[position_buffer_frame + 1];
+280337500:   45:            rendered_frame[position_rendered_frame + 2] = buffer_frame[position_buffer_frame + 2];
+        -:   46:        }
+        -:   47:    }
+        -:   48:
+        -:   49:    // fill left over pixels with white pixels
+      910:   50:    for (int row = (height - offset); row < height; row++) {
+branch  0 taken 80%
+branch  1 taken 20% (fallthrough)
+   913230:   51:        for (int column = 0; column < width; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+   912500:   52:            int position_rendered_frame = row * width * 3 + column * 3;
+   912500:   53:            rendered_frame[position_rendered_frame] = 255;
+   912500:   54:            rendered_frame[position_rendered_frame + 1] = 255;
+   912500:   55:            rendered_frame[position_rendered_frame + 2] = 255;
+        -:   56:        }
+        -:   57:    }
+        -:   58:
+        -:   59:    // copy the temporary buffer back to original frame buffer
+      180:   60:    buffer_frame = copyFrame(rendered_frame, buffer_frame, width, height);
+call    0 returned 100%
+        -:   61:
+        -:   62:    // free temporary image buffer
+      180:   63:    deallocateFrame(rendered_frame);
+call    0 returned 100%
+        -:   64:
+        -:   65:    // return a pointer to the updated image buffer
+      180:   66:    return buffer_frame;
+        -:   67:}
+        -:   68:
+        -:   69:/***********************************************************************************************************************
+        -:   70: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:   71: * @param width - width of the imported 24-bit bitmap image
+        -:   72: * @param height - height of the imported 24-bit bitmap image
+        -:   73: * @param offset - number of pixels to shift the object in bitmap image left
+        -:   74: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:   75: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:   76: * Note2: You can assume the object will never be moved off the screen
+        -:   77: **********************************************************************************************************************/
+function processMoveLeftReference called 250 returned 100% blocks executed 100%
+      250:   78:unsigned char *processMoveLeftReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+        -:   79:    // handle negative offsets
+      250:   80:    if (offset < 0){
+branch  0 taken 36% (fallthrough)
+branch  1 taken 64%
+       90:   81:        return processMoveRightReference(buffer_frame, width, height, offset * -1);
+call    0 returned 100%
+        -:   82:    }
+        -:   83:
+        -:   84:    // allocate memory for temporary image buffer
+      160:   85:    unsigned char *rendered_frame = allocateFrame(width, height);
+call    0 returned 100%
+        -:   86:
+        -:   87:    // store shifted pixels to temporary buffer
+   200160:   88:    for (int row = 0; row < height; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+249475000:   89:        for (int column = 0; column < (width - offset); column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+249275000:   90:            int position_rendered_frame = row * width * 3 + column * 3;
+249275000:   91:            int position_buffer_frame = row * width * 3 + (column + offset) * 3;
+249275000:   92:            rendered_frame[position_rendered_frame] = buffer_frame[position_buffer_frame];
+249275000:   93:            rendered_frame[position_rendered_frame + 1] = buffer_frame[position_buffer_frame + 1];
+249275000:   94:            rendered_frame[position_rendered_frame + 2] = buffer_frame[position_buffer_frame + 2];
+        -:   95:        }
+        -:   96:    }
+        -:   97:
+        -:   98:    // fill left over pixels with white pixels
+   200160:   99:    for (int row = 0; row < height; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+   925000:  100:        for (int column = width - offset; column < width; column++) {
+branch  0 taken 78%
+branch  1 taken 22% (fallthrough)
+   725000:  101:            int position_rendered_frame = row * width * 3 + column * 3;
+   725000:  102:            rendered_frame[position_rendered_frame] = 255;
+   725000:  103:            rendered_frame[position_rendered_frame + 1] = 255;
+   725000:  104:            rendered_frame[position_rendered_frame + 2] = 255;
+        -:  105:        }
+        -:  106:    }
+        -:  107:
+        -:  108:    // copy the temporary buffer back to original frame buffer
+      160:  109:    buffer_frame = copyFrame(rendered_frame, buffer_frame, width, height);
+call    0 returned 100%
+        -:  110:
+        -:  111:    // free temporary image buffer
+      160:  112:    deallocateFrame(rendered_frame);
+call    0 returned 100%
+        -:  113:
+        -:  114:    // return a pointer to the updated image buffer
+      160:  115:    return buffer_frame;
+        -:  116:}
+        -:  117:
+        -:  118:/***********************************************************************************************************************
+        -:  119: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:  120: * @param width - width of the imported 24-bit bitmap image
+        -:  121: * @param height - height of the imported 24-bit bitmap image
+        -:  122: * @param offset - number of pixels to shift the object in bitmap image up
+        -:  123: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:  124: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:  125: * Note2: You can assume the object will never be moved off the screen
+        -:  126: **********************************************************************************************************************/
+function processMoveDownReference called 180 returned 100% blocks executed 100%
+      180:  127:unsigned char *processMoveDownReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+        -:  128:    // handle negative offsets
+      180:  129:    if (offset < 0){
+branch  0 taken 50% (fallthrough)
+branch  1 taken 50%
+       90:  130:        return processMoveUpReference(buffer_frame, width, height, offset * -1);
+call    0 returned 100%
+        -:  131:    }
+        -:  132:
+        -:  133:    // allocate memory for temporary image buffer
+       90:  134:    unsigned char *rendered_frame = allocateFrame(width, height);
+call    0 returned 100%
+        -:  135:
+        -:  136:    // store shifted pixels to temporary buffer
+   112320:  137:    for (int row = offset; row < height; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+140399730:  138:        for (int column = 0; column < width; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+140287500:  139:            int position_rendered_frame = row * width * 3 + column * 3;
+140287500:  140:            int position_buffer_frame = (row - offset) * width * 3 + column * 3;
+140287500:  141:            rendered_frame[position_rendered_frame] = buffer_frame[position_buffer_frame];
+140287500:  142:            rendered_frame[position_rendered_frame + 1] = buffer_frame[position_buffer_frame + 1];
+140287500:  143:            rendered_frame[position_rendered_frame + 2] = buffer_frame[position_buffer_frame + 2];
+        -:  144:        }
+        -:  145:    }
+        -:  146:
+        -:  147:    // fill left over pixels with white pixels
+      360:  148:    for (int row = 0; row < offset; row++) {
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+   337770:  149:        for (int column = 0; column < width; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+   337500:  150:            int position_rendered_frame = row * width * 3 + column * 3;
+   337500:  151:            rendered_frame[position_rendered_frame] = 255;
+   337500:  152:            rendered_frame[position_rendered_frame + 1] = 255;
+   337500:  153:            rendered_frame[position_rendered_frame + 2] = 255;
+        -:  154:        }
+        -:  155:    }
+        -:  156:
+        -:  157:    // copy the temporary buffer back to original frame buffer
+       90:  158:    buffer_frame = copyFrame(rendered_frame, buffer_frame, width, height);
+call    0 returned 100%
+        -:  159:
+        -:  160:    // free temporary image buffer
+       90:  161:    deallocateFrame(rendered_frame);
+call    0 returned 100%
+        -:  162:
+        -:  163:    // return a pointer to the updated image buffer
+       90:  164:    return buffer_frame;
+        -:  165:}
+        -:  166:
+        -:  167:/***********************************************************************************************************************
+        -:  168: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:  169: * @param width - width of the imported 24-bit bitmap image
+        -:  170: * @param height - height of the imported 24-bit bitmap image
+        -:  171: * @param offset - number of pixels to shift the object in bitmap image right
+        -:  172: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:  173: * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
+        -:  174: * Note2: You can assume the object will never be moved off the screen
+        -:  175: **********************************************************************************************************************/
+function processMoveRightReference called 230 returned 100% blocks executed 100%
+      230:  176:unsigned char *processMoveRightReference(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
+        -:  177:    // handle negative offsets
+      230:  178:    if (offset < 0){
+branch  0 taken 35% (fallthrough)
+branch  1 taken 65%
+       80:  179:        return processMoveLeftReference(buffer_frame, width, height, offset * -1);
+call    0 returned 100%
+        -:  180:    }
+        -:  181:
+        -:  182:    // allocate memory for temporary image buffer
+      150:  183:    unsigned char *rendered_frame = allocateFrame(width, height);
+call    0 returned 100%
+        -:  184:
+        -:  185:    // store shifted pixels to temporary buffer
+   187650:  186:    for (int row = 0; row < height; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+233875000:  187:        for (int column = offset; column < width; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+233687500:  188:            int position_rendered_frame = row * width * 3 + column * 3;
+233687500:  189:            int position_buffer_frame = row * width * 3 + (column - offset) * 3;
+233687500:  190:            rendered_frame[position_rendered_frame] = buffer_frame[position_buffer_frame];
+233687500:  191:            rendered_frame[position_rendered_frame + 1] = buffer_frame[position_buffer_frame + 1];
+233687500:  192:            rendered_frame[position_rendered_frame + 2] = buffer_frame[position_buffer_frame + 2];
+        -:  193:        }
+        -:  194:    }
+        -:  195:
+        -:  196:    // fill left over pixels with white pixels
+   187650:  197:    for (int row = 0; row < height; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+   875000:  198:        for (int column = 0; column < offset; column++) {
+branch  0 taken 79%
+branch  1 taken 21% (fallthrough)
+   687500:  199:            int position_rendered_frame = row * width * 3 + column * 3;
+   687500:  200:            rendered_frame[position_rendered_frame] = 255;
+   687500:  201:            rendered_frame[position_rendered_frame + 1] = 255;
+   687500:  202:            rendered_frame[position_rendered_frame + 2] = 255;
+        -:  203:        }
+        -:  204:    }
+        -:  205:
+        -:  206:    // copy the temporary buffer back to original frame buffer
+      150:  207:    buffer_frame = copyFrame(rendered_frame, buffer_frame, width, height);
+call    0 returned 100%
+        -:  208:
+        -:  209:    // free temporary image buffer
+      150:  210:    deallocateFrame(rendered_frame);
+call    0 returned 100%
+        -:  211:
+        -:  212:    // return a pointer to the updated image buffer
+      150:  213:    return buffer_frame;
+        -:  214:}
+        -:  215:
+        -:  216:/***********************************************************************************************************************
+        -:  217: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:  218: * @param width - width of the imported 24-bit bitmap image
+        -:  219: * @param height - height of the imported 24-bit bitmap image
+        -:  220: * @param rotate_iteration - rotate object inside frame buffer clockwise by 90 degrees, <iteration> times
+        -:  221: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:  222: * Note: You can assume the frame will always be square and you will be rotating the entire image
+        -:  223: **********************************************************************************************************************/
+function processRotateCWReference called 1720 returned 100% blocks executed 100%
+     1720:  224:unsigned char *processRotateCWReference(unsigned char *buffer_frame, unsigned width, unsigned height,
+        -:  225:                                        int rotate_iteration) {
+        -:  226:    // handle negative offsets
+     1720:  227:    if (rotate_iteration < 0){
+branch  0 taken 3% (fallthrough)
+branch  1 taken 97%
+       50:  228:        return processRotateCCWReference(buffer_frame, width, height, rotate_iteration * -1);
+call    0 returned 100%
+        -:  229:    }
+        -:  230:
+        -:  231:    // allocate memory for temporary image buffer
+     1670:  232:    unsigned char *rendered_frame = allocateFrame(width, height);
+call    0 returned 100%
+        -:  233:
+        -:  234:    // store shifted pixels to temporary buffer
+     6320:  235:    for (int iteration = 0; iteration < rotate_iteration; iteration++) {
+branch  0 taken 74%
+branch  1 taken 26% (fallthrough)
+     4650:  236:        int render_column = width - 1;
+     4650:  237:        int render_row = 0;
+  5817150:  238:        for (int row = 0; row < width; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+7271437500:  239:            for (int column = 0; column < height; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+7265625000:  240:                int position_frame_buffer = row * width * 3 + column * 3;
+7265625000:  241:                rendered_frame[render_row * width * 3 + render_column * 3] = buffer_frame[position_frame_buffer];
+7265625000:  242:                rendered_frame[render_row * width * 3 + render_column * 3 + 1] = buffer_frame[position_frame_buffer + 1];
+7265625000:  243:                rendered_frame[render_row * width * 3 + render_column * 3 + 2] = buffer_frame[position_frame_buffer + 2];
+7265625000:  244:                render_row += 1;
+        -:  245:            }
+  5812500:  246:            render_row = 0;
+  5812500:  247:            render_column -= 1;
+        -:  248:        }
+        -:  249:
+        -:  250:        // copy the temporary buffer back to original frame buffer
+     4650:  251:        buffer_frame = copyFrame(rendered_frame, buffer_frame, width, height);
+call    0 returned 100%
+        -:  252:    }
+        -:  253:
+        -:  254:    // free temporary image buffer
+     1670:  255:    deallocateFrame(rendered_frame);
+call    0 returned 100%
+        -:  256:
+        -:  257:    // return a pointer to the updated image buffer
+     1670:  258:    return buffer_frame;
+        -:  259:}
+        -:  260:
+        -:  261:/***********************************************************************************************************************
+        -:  262: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:  263: * @param width - width of the imported 24-bit bitmap image
+        -:  264: * @param height - height of the imported 24-bit bitmap image
+        -:  265: * @param rotate_iteration - rotate object inside frame buffer counter clockwise by 90 degrees, <iteration> times
+        -:  266: * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
+        -:  267: * Note: You can assume the frame will always be square and you will be rotating the entire image
+        -:  268: **********************************************************************************************************************/
+function processRotateCCWReference called 180 returned 100% blocks executed 100%
+      180:  269:unsigned char *processRotateCCWReference(unsigned char *buffer_frame, unsigned width, unsigned height,
+        -:  270:                                         int rotate_iteration) {
+      180:  271:    if (rotate_iteration < 0){
+branch  0 taken 33% (fallthrough)
+branch  1 taken 67%
+        -:  272:        // handle negative offsets
+        -:  273:        // rotating 90 degrees counter clockwise in opposite direction is equal to 90 degrees in cw direction
+      270:  274:        for (int iteration = 0; iteration > rotate_iteration; iteration--) {
+branch  0 taken 78%
+branch  1 taken 22% (fallthrough)
+      210:  275:            buffer_frame = processRotateCWReference(buffer_frame, width, height, 1);
+call    0 returned 100%
+        -:  276:        }
+        -:  277:    } else {
+        -:  278:        // rotating 90 degrees counter clockwise is equivalent of rotating 270 degrees clockwise
+     1520:  279:        for (int iteration = 0; iteration < rotate_iteration; iteration++) {
+branch  0 taken 92%
+branch  1 taken 8% (fallthrough)
+     1400:  280:            buffer_frame = processRotateCWReference(buffer_frame, width, height, 3);
+call    0 returned 100%
+        -:  281:        }
+        -:  282:    }
+        -:  283:
+        -:  284:    // return a pointer to the updated image buffer
+      180:  285:    return buffer_frame;
+        -:  286:}
+        -:  287:
+        -:  288:/***********************************************************************************************************************
+        -:  289: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:  290: * @param width - width of the imported 24-bit bitmap image
+        -:  291: * @param height - height of the imported 24-bit bitmap image
+        -:  292: * @param _unused - this field is unused
+        -:  293: * @return
+        -:  294: **********************************************************************************************************************/
+        -:  295:unsigned char *
+function processMirrorXReference called 110 returned 100% blocks executed 100%
+      110:  296:processMirrorXReference(unsigned char *buffer_frame, unsigned int width, unsigned int height, int _unused) {
+        -:  297:    // allocate memory for temporary image buffer
+      110:  298:    unsigned char *rendered_frame = allocateFrame(width, height);
+call    0 returned 100%
+        -:  299:
+        -:  300:    // store shifted pixels to temporary buffer
+   137610:  301:    for (int row = 0; row < height; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+172012500:  302:        for (int column = 0; column < width; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+171875000:  303:            int position_rendered_frame = row * height * 3 + column * 3;
+171875000:  304:            int position_buffer_frame = (height - row - 1) * height * 3 + column * 3;
+171875000:  305:            rendered_frame[position_rendered_frame] = buffer_frame[position_buffer_frame];
+171875000:  306:            rendered_frame[position_rendered_frame + 1] = buffer_frame[position_buffer_frame + 1];
+171875000:  307:            rendered_frame[position_rendered_frame + 2] = buffer_frame[position_buffer_frame + 2];
+        -:  308:        }
+        -:  309:    }
+        -:  310:
+        -:  311:    // copy the temporary buffer back to original frame buffer
+      110:  312:    buffer_frame = copyFrame(rendered_frame, buffer_frame, width, height);
+call    0 returned 100%
+        -:  313:
+        -:  314:    // free temporary image buffer
+      110:  315:    deallocateFrame(rendered_frame);
+call    0 returned 100%
+        -:  316:
+        -:  317:    // return a pointer to the updated image buffer
+      110:  318:    return buffer_frame;
+        -:  319:}
+        -:  320:
+        -:  321:/***********************************************************************************************************************
+        -:  322: * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:  323: * @param width - width of the imported 24-bit bitmap image
+        -:  324: * @param height - height of the imported 24-bit bitmap image
+        -:  325: * @param _unused - this field is unused
+        -:  326: * @return
+        -:  327: **********************************************************************************************************************/
+function processMirrorYReference called 70 returned 100% blocks executed 100%
+       70:  328:unsigned char *processMirrorYReference(unsigned char *buffer_frame, unsigned width, unsigned height, int _unused) {
+        -:  329:    // allocate memory for temporary image buffer
+       70:  330:    unsigned char *rendered_frame = allocateFrame(width, height);
+call    0 returned 100%
+        -:  331:
+        -:  332:    // store shifted pixels to temporary buffer
+    87570:  333:    for (int row = 0; row < height; row++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+109462500:  334:        for (int column = 0; column < width; column++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+109375000:  335:            int position_rendered_frame = row * height * 3 + column * 3;
+109375000:  336:            int position_buffer_frame = row * height * 3 + (width - column - 1) * 3;
+109375000:  337:            rendered_frame[position_rendered_frame] = buffer_frame[position_buffer_frame];
+109375000:  338:            rendered_frame[position_rendered_frame + 1] = buffer_frame[position_buffer_frame + 1];
+109375000:  339:            rendered_frame[position_rendered_frame + 2] = buffer_frame[position_buffer_frame + 2];
+        -:  340:        }
+        -:  341:    }
+        -:  342:
+        -:  343:    // copy the temporary buffer back to original frame buffer
+       70:  344:    buffer_frame = copyFrame(rendered_frame, buffer_frame, width, height);
+call    0 returned 100%
+        -:  345:
+        -:  346:    // free temporary image buffer
+       70:  347:    deallocateFrame(rendered_frame);
+call    0 returned 100%
+        -:  348:
+        -:  349:    // return a pointer to the updated image buffer
+       70:  350:    return buffer_frame;
+        -:  351:}
+        -:  352:
+        -:  353:/***********************************************************************************************************************
+        -:  354: * @param sensor_values - structure stores parsed key value pairs of program instructions
+        -:  355: * @param sensor_values_count - number of valid sensor values parsed from sensor log file or commandline console
+        -:  356: * @param frame_buffer - pointer pointing to a buffer storing the imported 24-bit bitmap image
+        -:  357: * @param width - width of the imported 24-bit bitmap image
+        -:  358: * @param height - height of the imported 24-bit bitmap image
+        -:  359: * @param grading_mode - turns off verification and turn on instrumentation
+        -:  360: ***********************************************************************************************************************
+        -:  361: *
+        -:  362: **********************************************************************************************************************/
+        -:  363:
+function implementation_driver_reference called 4 returned 100% blocks executed 100%
+        4:  364:void implementation_driver_reference(struct kv *sensor_values, int sensor_values_count, unsigned char *frame_buffer,
+        -:  365:                                     unsigned int width, unsigned int height, bool grading_mode) {
+        4:  366:    int processed_frames = 0;
+      404:  367:    for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+        -:  368://        printf("Processing sensor value #%d: %s, %d\n", sensorValueIdx, sensor_values[sensorValueIdx].key,
+        -:  369://               sensor_values[sensorValueIdx].value);
+      400:  370:        if (!strcmp(sensor_values[sensorValueIdx].key, "D")) {
+branch  0 taken 14% (fallthrough)
+branch  1 taken 86%
+       56:  371:            frame_buffer = processMoveRightReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  372://            printBMP(width, height, frame_buffer);
+      344:  373:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "A")) {
+branch  0 taken 20% (fallthrough)
+branch  1 taken 80%
+       68:  374:            frame_buffer = processMoveLeftReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  375://            printBMP(width, height, frame_buffer);
+      276:  376:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "W")) {
+branch  0 taken 13% (fallthrough)
+branch  1 taken 87%
+       36:  377:            frame_buffer = processMoveUpReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  378://            printBMP(width, height, frame_buffer);
+      240:  379:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "S")) {
+branch  0 taken 30% (fallthrough)
+branch  1 taken 70%
+       72:  380:            frame_buffer = processMoveDownReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  381://            printBMP(width, height, frame_buffer);
+      168:  382:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "CW")) {
+branch  0 taken 26% (fallthrough)
+branch  1 taken 74%
+       44:  383:            frame_buffer = processRotateCWReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  384://            printBMP(width, height, frame_buffer);
+      124:  385:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "CCW")) {
+branch  0 taken 42% (fallthrough)
+branch  1 taken 58%
+       52:  386:            frame_buffer = processRotateCCWReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  387://            printBMP(width, height, frame_buffer);
+       72:  388:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "MX")) {
+branch  0 taken 61% (fallthrough)
+branch  1 taken 39%
+       44:  389:            frame_buffer = processMirrorXReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  390://            printBMP(width, height, frame_buffer);
+       28:  391:        } else if (!strcmp(sensor_values[sensorValueIdx].key, "MY")) {
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+       28:  392:            frame_buffer = processMirrorYReference(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+call    0 returned 100%
+        -:  393://            printBMP(width, height, frame_buffer);
+        -:  394:        }
+      400:  395:        processed_frames += 1;
+      400:  396:        if (processed_frames % 25 == 0) {
+branch  0 taken 4% (fallthrough)
+branch  1 taken 96%
+       16:  397:            recordFrame(frame_buffer, width, height, grading_mode);
+call    0 returned 100%
+        -:  398:        }
+        -:  399:    }
+        4:  400:    return;
+        -:  401:}

@@ -1,0 +1,157 @@
+        -:    0:Source:utilities.c
+        -:    0:Programs:6
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include <string.h>
+        -:    4:#include <stdbool.h>
+        -:    5:#include "utilities.h"
+        -:    6:
+        -:    7:/***********************************************************************************************************************
+        -:    8: * Warning: DO NOT MODIFY or SUBMIT this file
+        -:    9: **********************************************************************************************************************/
+        -:   10:
+function printBMP called 0 returned 0% blocks executed 0%
+    #####:   11:void printBMP(unsigned width, unsigned height, unsigned char *frame_buffer) {
+        -:   12:    int row;
+        -:   13:    int column;
+        -:   14:    int location;
+        -:   15:
+    #####:   16:    printf("*******************************************************************************************************\n");
+call    0 never executed
+    #####:   17:    for (row = 0; row < height; row++) {
+branch  0 never executed
+branch  1 never executed
+    #####:   18:        for (column = 0; column < width; column++) {
+branch  0 never executed
+branch  1 never executed
+    #####:   19:            location = ((width * 3) * row) + (column * 3);
+    #####:   20:            printf("[%03d,%03d,%03d]", frame_buffer[location], frame_buffer[location + 1], frame_buffer[location + 2]);
+call    0 never executed
+        -:   21:        }
+    #####:   22:        printf("\n");
+call    0 never executed
+        -:   23:    }
+    #####:   24:    printf("*******************************************************************************************************\n");
+call    0 never executed
+    #####:   25:}
+        -:   26:
+        -:   27:// Frame Utilities
+function allocateFrame called 2443 returned 100% blocks executed 100%
+     2443:   28:unsigned char* allocateFrame(unsigned width, unsigned height){
+     2443:   29:    return (unsigned char*)malloc((width * height * 3) * sizeof(char));
+        -:   30:}
+        -:   31:
+function deallocateFrame called 2438 returned 100% blocks executed 100%
+     2438:   32:void deallocateFrame(unsigned char *frame){
+     2438:   33:    free(frame);
+     2438:   34:    return;
+        -:   35:}
+        -:   36:
+        -:   37:// Copy content from one frame to another
+function copyFrame called 5426 returned 100% blocks executed 100%
+     5426:   38:unsigned char* copyFrame(unsigned char* src, unsigned char* dst, unsigned width, unsigned height) {
+        -:   39:    // copy the rendered image back to original frame buffer (pixel)
+  6787926:   40:    for(int row = 0; row < height; row++){
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+8484907500:   41:        for(int column = 0; column < width; column++){
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+8478125000:   42:            int position = row * width * 3 + column * 3;
+8478125000:   43:            dst[position] = src[position];
+8478125000:   44:            dst[position + 1] = src[position + 1];
+8478125000:   45:            dst[position + 2] = src[position + 2];
+        -:   46:        }
+        -:   47:    }
+     5426:   48:    return dst;
+        -:   49:}
+        -:   50:
+        -:   51:// Variables used by recordFrame and verifyFrame
+        -:   52:unsigned char *recorded_frames[1000];
+        -:   53:unsigned int recorded_frames_count = 0;
+        -:   54:unsigned int verified_frames_count = 0;
+        -:   55:
+        -:   56:// Each time recordFrame is called, it makes a deep copy of the buffer passed in and store it in recorded_frames
+function recordFrame called 16 returned 100% blocks executed 100%
+       16:   57:void recordFrame(unsigned char *frame_buffer, unsigned int width, unsigned int height, bool grading_mode) {
+       16:   58:    if (grading_mode) {
+branch  0 taken 75% (fallthrough)
+branch  1 taken 25%
+       12:   59:        recorded_frames_count++;
+       12:   60:        return;
+        -:   61:    } else {
+        4:   62:        recorded_frames[recorded_frames_count] = allocateFrame(width, height);
+call    0 returned 100%
+        4:   63:        copyFrame(frame_buffer, recorded_frames[recorded_frames_count], width, height);
+call    0 returned 100%
+        4:   64:        recorded_frames_count++;
+        -:   65:    }
+        -:   66:
+        -:   67:}
+        -:   68:
+        -:   69:// Each time verifyFrame is called, it verifies if the buffer passed in is the same as the corresponding one in recorded_frames
+        -:   70:// If it is different, print out the frame number and exit immediately.
+function verifyFrame called 24 returned 100% blocks executed 60%
+       24:   71:void verifyFrame(unsigned char *frame_buffer, unsigned int width, unsigned int height, bool grading_mode) {
+       24:   72:    if (grading_mode) {
+branch  0 taken 83% (fallthrough)
+branch  1 taken 17%
+       20:   73:        verified_frames_count++;
+       20:   74:        return;
+        -:   75:    } else {
+        -:   76:        // verify frame, memcmp returns 0 if buffer is the same, -1 or +1 when buffers are different
+        4:   77:        if (memcmp(frame_buffer, recorded_frames[verified_frames_count], width * height * 3)){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   78:            printf("ERROR: frame #%d is different compared to the reference implementation\n", verified_frames_count);
+call    0 never executed
+    #####:   79:            exit (-1);
+call    0 never executed
+        -:   80:        } else {
+        4:   81:            printf("SUCCESS: frame #%d is the same compared to the reference implementation\n", verified_frames_count);
+call    0 returned 100%
+        -:   82:        }
+        4:   83:        verified_frames_count++;
+        4:   84:        if (verified_frames_count > recorded_frames_count){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   85:            printf("ERROR: frame #%d in your application does not exist in the reference solution.\n",
+call    0 never executed
+        -:   86:                   (verified_frames_count - 1));
+    #####:   87:            exit (-1);
+call    0 never executed
+        -:   88:        }
+        -:   89:    }
+        -:   90:}
+        -:   91:
+        -:   92:// Verify that all frames has been verified
+function verifiedAllFrames called 1 returned 100% blocks executed 67%
+        1:   93:void verifiedAllFrames(){
+        1:   94:    if (verified_frames_count < recorded_frames_count){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   95:        printf("ERROR: your implementation only contains %u out of %u required frames.\n",
+call    0 never executed
+        -:   96:               verified_frames_count, recorded_frames_count);
+        -:   97:
+        -:   98:    }
+        1:   99:}
+        -:  100:
+        -:  101:// This is slightly redundant, but nevertheless helpful to catch cheaters
+function verifiedAllFramesGrading called 1 returned 100% blocks executed 40%
+        1:  102:void verifiedAllFramesGrading(){
+       1*:  103:    if (!recorded_frames_count && !verified_frames_count){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+branch  2 never executed
+branch  3 never executed
+    #####:  104:        printf("ERROR: your implementation did not output the same number of required frames as reference implementation");
+call    0 never executed
+    #####:  105:        exit (-1);
+call    0 never executed
+        -:  106:    } else {
+        -:  107:        // reset counters for verification use
+        1:  108:        recorded_frames_count = 0;
+        1:  109:        verified_frames_count = 0;
+        -:  110:    }
+        1:  111:}
